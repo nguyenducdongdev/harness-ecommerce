@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
 using Harness.Modules.Inventory.Domain;
 using MediatR;
@@ -14,7 +14,7 @@ public class AdjustStockCommandValidator : AbstractValidator<AdjustStockCommand>
     {
         RuleFor(x => x.WarehouseId).GreaterThan(0);
         RuleFor(x => x.VariantSku).NotEmpty().MaximumLength(64);
-        RuleFor(x => x.Delta).NotEqual(0).WithMessage("S? lu?ng di?u ch?nh ph?i kh�c 0.");
+        RuleFor(x => x.Delta).NotEqual(0).WithMessage("Số lượng điều chỉnh phải khác 0.");
         RuleFor(x => x.Reference).NotEmpty().MaximumLength(50);
     }
 }
@@ -33,7 +33,7 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Sto
         if (stock is null)
         {
             if (request.Delta < 0)
-                throw new InvalidOperationException("Kh�ng th? tr? t?n kho chua kh?i t?o.");
+                throw new InvalidOperationException("Không thể trừ tồn kho chưa khởi tạo.");
             stock = StockLevel.Create(request.WarehouseId, request.VariantSku, request.Delta);
             _db.Set<StockLevel>().Add(stock);
         }
@@ -301,3 +301,4 @@ public class GetWarehousesQueryHandler : IRequestHandler<GetWarehousesQuery, IRe
 }
 
 public record WarehouseDto(int Id, string Code, string Name, string Address, bool IsShowroom);
+

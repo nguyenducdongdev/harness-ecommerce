@@ -149,14 +149,14 @@ public class GetCategoriesQueryHandler : IRequestHandler<GetCategoriesQuery, IRe
 
     public GetCategoriesQueryHandler(IHarnessDbContext db) => _db = db;
 
-    public async Task<IReadOnlyList<CategoryDto>> Handle(GetCategoriesQuery request, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<CategoryDto>> Handle(GetCategoriesQuery request, CancellationToken cancellationToken)
     {
         var query = _db.Set<Category>().AsNoTracking().AsEnumerable();
         if (request.OnlyActive) query = query.Where(c => c.IsActive);
 
-        return query.OrderBy(c => c.SortOrder)
+        return Task.FromResult<IReadOnlyList<CategoryDto>>(query.OrderBy(c => c.SortOrder)
             .Select(c => new CategoryDto(c.Id, c.Name, c.Slug, c.ParentId, c.SortOrder, c.IsActive))
-            .ToList();
+            .ToList());
     }
 }
 
