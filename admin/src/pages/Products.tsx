@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Button, Input, Modal, Select, Space, Table, Typography, message } from "antd";
-import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, Input, Modal, Select, Space, Table, Typography, Upload, message } from "antd";
+import { PlusOutlined, SearchOutlined, UploadOutlined } from "@ant-design/icons";
 import { api } from "../api";
 
 interface Product {
@@ -90,6 +90,38 @@ export default function Products() {
     { title: "SKU", dataIndex: "sku", width: 170 },
     { title: "Danh mục", dataIndex: "categoryName", width: 130 },
     { title: "Thương hiệu", dataIndex: "brandName", width: 120 },
+    {
+      title: "Ảnh",
+      width: 100,
+      render: (_: unknown, record: Product) => (
+        <Upload
+          accept="image/*"
+          showUploadList={false}
+          customRequest={async ({ file, onSuccess, onError }) => {
+            try {
+              const fd = new FormData();
+              fd.append("file", file as File);
+              const res = await api.post(`/api/v1/products/${record.id}/images`, fd, {
+                headers: { "Content-Type": "multipart/form-data" },
+              });
+              const url = res.data?.data as string | undefined;
+              if (url) {
+                messageApi.success("Đã upload ảnh: " + url);
+                onSuccess?.(res.data);
+              } else {
+                onError?.(new Error(res.data?.message ?? "Upload thất bại."));
+              }
+            } catch (err: any) {
+              onError?.(new Error(err?.response?.data?.message ?? "Upload thất bại."));
+            }
+          }}
+        >
+          <Button size="small" icon={<UploadOutlined />}>
+            Tải ảnh
+          </Button>
+        </Upload>
+      ),
+    },
     {
       title: "Giá bán",
       dataIndex: "displayPrice",

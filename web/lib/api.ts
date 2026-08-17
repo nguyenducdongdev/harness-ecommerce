@@ -32,13 +32,18 @@ export interface Product {
   slug: string;
   sku: string;
   shortDescription: string | null;
+  description: string | null;
   categoryId: number;
   categoryName: string | null;
+  categorySlug: string | null;
+  brandId: number;
   brandName: string | null;
   price: number;
   salePrice: number | null;
   warrantyMonths: number;
+  isActive: boolean;
   isFeatured: boolean;
+  viewCount: number;
   attributes: Record<string, string>;
   imageUrls: string[];
   variants: ProductVariant[];

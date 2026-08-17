@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AddToCartPanel } from "@/components/AddToCartPanel";
+import ShippingEstimator from "@/components/ShippingEstimator";
 import { fetchFromServer, type Product } from "@/lib/api";
 import { formatVnd } from "@/lib/format";
 
@@ -56,6 +57,15 @@ export default async function ProductDetailPage({ params }: Props) {
           )}
 
           <AddToCartPanel product={product} />
+
+          {/* Ước tính phí vận chuyển theo thể tích (phí ship hàng cồng kềnh) */}
+          {product.variants && product.variants.length > 0 ? (
+            <ShippingEstimator
+              defaultWidthCm={product.variants[0].widthCm}
+              defaultDepthCm={product.variants[0].depthCm}
+              defaultHeightCm={product.variants[0].heightCm}
+            />
+          ) : null}
 
           {/* Thông số */}
           <div className="mt-6 rounded-xl border bg-white p-5">

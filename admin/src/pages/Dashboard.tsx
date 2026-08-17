@@ -2,7 +2,6 @@ import { Card, Col, Row, Statistic, Typography } from "antd";
 import {
   ShoppingOutlined,
   DollarOutlined,
-  UserOutlined,
   AppstoreOutlined,
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
