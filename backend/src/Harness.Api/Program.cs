@@ -6,6 +6,8 @@ using Harness.BuildingBlocks.Application.Behaviors;
 using Harness.BuildingBlocks.Infrastructure;
 using Harness.BuildingBlocks.Presentation.Middleware;
 using Harness.Modules.Catalog;
+using Harness.Modules.Catalog.Application.Abstractions;
+using Harness.Modules.Catalog.Infrastructure.Search;
 using Harness.Modules.Integration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -45,6 +47,10 @@ builder.Services.AddScoped<Harness.BuildingBlocks.Infrastructure.Persistence.IHa
 
 // ===== BuildingBlocks: Redis cache + RabbitMQ event bus =====
 builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration);
+
+// ===== Khởi tạo module (DI riêng của từng module) =====
+builder.Services.AddCatalogModule(builder.Configuration);
+builder.Services.AddShippingModule(builder.Configuration);
 
 // ===== MediatR (CQRS) + pipeline behaviors =====
 builder.Services.AddMediatR(cfg =>
@@ -106,6 +112,10 @@ if (app.Environment.IsDevelopment())
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await db.Database.MigrateAsync();
         await CatalogSeed.SeedAsync(db);
+
+        // Khởi tạo index Elasticsearch (best-effort — không ném lỗi nếu ES chưa sẵn sàng)
+        var indexer = scope.ServiceProvider.GetRequiredService<IProductIndexer>();
+        await indexer.EnsureIndexAsync();
     }
 }
 
@@ -119,5 +129,11 @@ RecurringJob.AddOrUpdate<OutboxPublisherJob>(
     "outbox-publisher",
     job => job.PublishPendingAsync(CancellationToken.None),
     Cron.Minutely());
+
+// Reindex sản phẩm lên Elasticsearch mỗi ngày (đảm bảo index đồng bộ dữ liệu thay đổi/seed)
+RecurringJob.AddOrUpdate<ProductReindexJob>(
+    "catalog-product-reindex",
+    job => job.RunAsync(CancellationToken.None),
+    Cron.Daily());
 
 app.Run();

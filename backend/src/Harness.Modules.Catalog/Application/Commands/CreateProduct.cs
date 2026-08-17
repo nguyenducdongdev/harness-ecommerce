@@ -1,9 +1,11 @@
 using FluentValidation;
 using Harness.BuildingBlocks.Application.Common;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
+using Harness.Modules.Catalog.Application.Abstractions;
 using Harness.Modules.Catalog.Application.Dtos;
 using Harness.Modules.Catalog.Domain;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Harness.Modules.Catalog.Application.Commands;
 
@@ -56,8 +58,13 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
 public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, ProductDto>
 {
     private readonly IHarnessDbContext _db;
+    private readonly IProductIndexer _indexer;
 
-    public CreateProductCommandHandler(IHarnessDbContext db) => _db = db;
+    public CreateProductCommandHandler(IHarnessDbContext db, IProductIndexer indexer)
+    {
+        _db = db;
+        _indexer = indexer;
+    }
 
     public async Task<ProductDto> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
@@ -85,6 +92,11 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         var category = await _db.Set<Category>().FindAsync(new object[] { request.CategoryId }, cancellationToken);
         var brand = await _db.Set<Brand>().FindAsync(new object[] { request.BrandId }, cancellationToken);
 
+        // Đồng bộ sản phẩm mới lên Elasticsearch (best-effort — ES không sẵn sàng thì bỏ qua)
+        await _indexer.IndexProductAsync(
+            ProductSearchDocument.FromProduct(product, category?.Name, category?.Slug, brand?.Name),
+            cancellationToken);
+
         return ProductMapper.ToDto(product, category?.Name, brand?.Name, category?.Slug);
     }
 }
@@ -104,8 +116,13 @@ public class UpdateProductPriceCommandValidator : AbstractValidator<UpdateProduc
 public class UpdateProductPriceCommandHandler : IRequestHandler<UpdateProductPriceCommand, Unit>
 {
     private readonly IHarnessDbContext _db;
+    private readonly IProductIndexer _indexer;
 
-    public UpdateProductPriceCommandHandler(IHarnessDbContext db) => _db = db;
+    public UpdateProductPriceCommandHandler(IHarnessDbContext db, IProductIndexer indexer)
+    {
+        _db = db;
+        _indexer = indexer;
+    }
 
     public async Task<Unit> Handle(UpdateProductPriceCommand request, CancellationToken cancellationToken)
     {
@@ -115,6 +132,19 @@ public class UpdateProductPriceCommandHandler : IRequestHandler<UpdateProductPri
         product.UpdatePrice(request.Price, request.SalePrice);
         _db.AddToOutbox(new ProductUpdatedIntegrationEvent(product.Id, request.Price, request.SalePrice));
         await _db.SaveChangesAsync(cancellationToken);
+
+        // Đồng bộ giá mới lên Elasticsearch (best-effort)
+        var row = await (
+            from p in _db.Set<Product>().AsNoTracking()
+            join c in _db.Set<Category>().AsNoTracking() on p.CategoryId equals c.Id
+            join b in _db.Set<Brand>().AsNoTracking() on p.BrandId equals b.Id
+            where p.Id == request.ProductId
+            select new { p, c, b }).FirstOrDefaultAsync(cancellationToken);
+
+        if (row is not null)
+            await _indexer.IndexProductAsync(
+                ProductSearchDocument.FromProduct(row.p, row.c.Name, row.c.Slug, row.b.Name), cancellationToken);
+
         return Unit.Value;
     }
 }

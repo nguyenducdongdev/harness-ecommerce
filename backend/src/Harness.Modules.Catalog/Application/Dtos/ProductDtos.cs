@@ -45,6 +45,9 @@ public record CategoryDto(int Id, string Name, string Slug, int? ParentId, int S
 
 public record BrandDto(int Id, string Name, string Slug, string? OriginCountry);
 
+/// <summary>Dữ liệu lọc thuộc tính cho sidebar (phong-cach, chat-lieu).</summary>
+public record AttributeFilterDto(List<string> PhongCach, List<string> ChatLieu);
+
 public sealed class ProductSort
 {
     public const string Newest = "newest";

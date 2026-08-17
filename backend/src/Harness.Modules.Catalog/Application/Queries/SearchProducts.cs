@@ -17,7 +17,8 @@ public record SearchProductsQuery(
     decimal? MinPrice = null,
     decimal? MaxPrice = null,
     string Sort = ProductSort.Newest,
-    bool OnlyActive = true) : IRequest<PagedResult<ProductDto>>;
+    bool OnlyActive = true,
+    Dictionary<string, string>? Attributes = null) : IRequest<PagedResult<ProductDto>>;
 
 public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, PagedResult<ProductDto>>
 {
@@ -47,12 +48,24 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
         if (request.MinPrice.HasValue) query = query.Where(x => x.Price >= request.MinPrice);
         if (request.MaxPrice.HasValue) query = query.Where(x => x.Price <= request.MaxPrice);
 
+        // Lọc theo thuộc tính JSONB (ví dụ: phong-cach=Hiện đại, chat-lieu=Gỗ óc chó)
+        if (request.Attributes is { Count: > 0 })
+        {
+            foreach (var (key, value) in request.Attributes)
+            {
+                if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value)) continue;
+                var k = key.Trim();
+                var v = value.Trim();
+                query = query.Where(x => EF.Functions.JsonContains(x.p.Attributes, $"{{\"{k}\":\"{v}\"}}"));
+            }
+        }
+
         query = request.Sort switch
         {
             ProductSort.PriceAsc => query.OrderBy(x => x.p.SalePrice ?? x.p.Price),
             ProductSort.PriceDesc => query.OrderByDescending(x => x.p.SalePrice ?? x.p.Price),
             ProductSort.Popular => query.OrderByDescending(x => x.p.ViewCount),
-            ProductSort.BestSelling => query.OrderByDescending(x => x.p.Id), // TODO Phase 2: thay bằng số bán thực tế từ Order module
+            ProductSort.BestSelling => query.OrderByDescending(x => x.p.Id),
             _ => query.OrderByDescending(x => x.p.CreatedAt)
         };
 
@@ -64,6 +77,46 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
 
         var dtos = items.Select(x => ProductMapper.ToDto(x.p, x.c.Name, x.b.Name, x.c.Slug)).ToList();
         return PagedResult<ProductDto>.Create(dtos, total, page, pageSize);
+    }
+}
+
+/// <summary>Lấy danh sách giá trị có thể lọc theo thuộc tính (sidebar filter).</summary>
+public record GetProductAttributesQuery(string? CategorySlug = null) : IRequest<AttributeFilterDto>;
+
+public class GetProductAttributesQueryHandler : IRequestHandler<GetProductAttributesQuery, AttributeFilterDto>
+{
+    private readonly IHarnessDbContext _db;
+
+    public GetProductAttributesQueryHandler(IHarnessDbContext db) => _db = db;
+
+    public async Task<AttributeFilterDto> Handle(GetProductAttributesQuery request, CancellationToken cancellationToken)
+    {
+        var query = _db.Set<Product>().AsNoTracking().Where(p => p.IsActive);
+        if (!string.IsNullOrWhiteSpace(request.CategorySlug))
+        {
+            query = from p in query
+                    join c in _db.Set<Category>().AsNoTracking() on p.CategoryId equals c.Id
+                    where c.Slug == request.CategorySlug
+                    select p;
+        }
+
+        var products = await query.ToListAsync(cancellationToken);
+
+        var phongCach = products
+            .SelectMany(p => p.Attributes.TryGetValue("phong-cach", out var v) ? new[] { v } : Array.Empty<string>())
+            .Where(v => !string.IsNullOrEmpty(v))
+            .Distinct()
+            .OrderBy(v => v)
+            .ToList();
+
+        var chatLieu = products
+            .SelectMany(p => p.Attributes.TryGetValue("chat-lieu", out var v) ? new[] { v } : Array.Empty<string>())
+            .Where(v => !string.IsNullOrEmpty(v))
+            .Distinct()
+            .OrderBy(v => v)
+            .ToList();
+
+        return new AttributeFilterDto(phongCach, chatLieu);
     }
 }
 

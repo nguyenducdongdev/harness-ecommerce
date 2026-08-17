@@ -6,6 +6,35 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Shipping.Presentation;
 
+/// <summary>API vận chuyển công khai (ước tính phí ship).</summary>
+public class ShippingQuotesController : ApiController
+{
+    public ShippingQuotesController(ISender mediator) : base(mediator) { }
+
+    /// <summary>Ước tính phí vận chuyển theo thể tích (volumetric weight W×D×H/6000).</summary>
+    [HttpGet("quote")]
+    [ProducesResponseType(typeof(ApiResponse<ShippingQuote>), StatusCodes.Status200OK)]
+    public IActionResult GetQuote(
+        [FromServices] ShippingCalculator calculator,
+        [FromQuery] int widthCm,
+        [FromQuery] int depthCm,
+        [FromQuery] int heightCm,
+        [FromQuery] double weightKg = 0,
+        [FromQuery] string zone = "noi-thanh")
+    {
+        if (widthCm <= 0 || depthCm <= 0 || heightCm <= 0)
+            return BadRequest(ApiResponse.Fail("Kích thước phải lớn hơn 0."));
+
+        var validZones = new[] { "noi-thanh", "ngoai-thanh", "tinh" };
+        if (!validZones.Contains(zone))
+            return BadRequest(ApiResponse.Fail("Khu vực không hợp lệ (noi-thanh, ngoai-thanh, tinh)."));
+
+        var quote = calculator.Calculate(widthCm, depthCm, heightCm, weightKg, zone);
+        return Ok(ApiResponse.Ok(quote));
+    }
+}
+
+/// <summary>API quản trị vận chuyển (tạo lô hàng, cập nhật trạng thái).</summary>
 public class ShipmentsController : ApiController
 {
     public ShipmentsController(ISender mediator) : base(mediator) { }

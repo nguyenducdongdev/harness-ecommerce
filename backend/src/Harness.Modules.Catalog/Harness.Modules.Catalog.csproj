@@ -3,4 +3,7 @@
     <ProjectReference Include="..\Harness.BuildingBlocks.Infrastructure\Harness.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\Harness.BuildingBlocks.Presentation\Harness.BuildingBlocks.Presentation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NEST" Version="8.15.0" />
+  </ItemGroup>
 </Project>
