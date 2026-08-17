@@ -1,0 +1,92 @@
+// Client API — gọi qua rewrite /api của Next (tránh CORS trong dev)
+
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+  errors?: Record<string, string[]>;
+}
+
+export interface ProductVariant {
+  id: number;
+  sku: string;
+  sizeName: string;
+  widthCm: number;
+  depthCm: number;
+  heightCm: number;
+  color: string | null;
+  priceOverride: number | null;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  shortDescription: string | null;
+  categoryId: number;
+  categoryName: string | null;
+  brandName: string | null;
+  price: number;
+  salePrice: number | null;
+  warrantyMonths: number;
+  isFeatured: boolean;
+  attributes: Record<string, string>;
+  imageUrls: string[];
+  variants: ProductVariant[];
+  displayPrice: number;
+  discountPercent: number;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+const BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { "Content-Type": "application/json", ...init?.headers },
+    ...init,
+  });
+  const body = (await res.json()) as ApiResponse<T>;
+  if (!res.ok || !body.success) {
+    throw new Error(body.message || `API lỗi ${res.status}`);
+  }
+  return body.data;
+}
+
+// Server-side fetch (gọi thẳng backend, dùng trong Server Components)
+export async function fetchFromServer<T>(path: string): Promise<T | null> {
+  try {
+    const apiUrl = process.env.API_URL ?? "http://localhost:5080";
+    const res = await fetch(`${apiUrl}${path}`, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const body = (await res.json()) as ApiResponse<T>;
+    return body.success ? body.data : null;
+  } catch {
+    return null; // Backend chưa chạy → render trang rỗng thay vì crash
+  }
+}
+
+export const api = {
+  searchProducts: (params: Record<string, string | number | undefined>) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== "") qs.set(k, String(v));
+    });
+    return fetchApi<PagedResult<Product>>(`/api/v1/products?${qs}`);
+  },
+  getProduct: (slug: string) => fetchApi<Product>(`/api/v1/products/${slug}`),
+  getCategories: () => fetchApi<Category[]>("/api/v1/categories"),
+};

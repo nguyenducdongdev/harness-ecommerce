@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Harness.BuildingBlocks.Infrastructure\Harness.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\Harness.BuildingBlocks.Presentation\Harness.BuildingBlocks.Presentation.csproj" />
+  </ItemGroup>
+</Project>

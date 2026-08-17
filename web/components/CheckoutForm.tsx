@@ -1,0 +1,152 @@
+"use client";
+
+import { useState } from "react";
+import { formatVnd } from "@/lib/format";
+import { useCart } from "@/store/cart";
+
+interface Props {
+  totalAmount: number;
+}
+
+const DELIVERY_OPTIONS = [
+  { value: "Standard", label: "Giao tiêu chuẩn (3-5 ngày)" },
+  { value: "Express", label: "Giao nhanh (24h)" },
+  { value: "PickupAtStore", label: "Nhận tại showroom" },
+];
+
+const PAYMENT_OPTIONS = [
+  { value: "Cod", label: "Tiền mặt khi nhận hàng (COD)" },
+  { value: "BankTransfer", label: "Chuyển khoản / QR ngân hàng" },
+  { value: "VnPay", label: "VNPay (thẻ/ví)" },
+  { value: "MoMo", label: "Ví MoMo" },
+];
+
+export function CheckoutForm({ totalAmount }: Props) {
+  const items = useCart((s) => s.items);
+  const clear = useCart((s) => s.clear);
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [delivery, setDelivery] = useState("Standard");
+  const [payment, setPayment] = useState("Cod");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [orderNumber, setOrderNumber] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!/^0\d{9,10}$/.test(phone)) {
+      setError("Số điện thoại không hợp lệ (VD: 0912345678).");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/v1/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: name,
+          customerPhone: phone,
+          shippingAddress: address || "Nhận tại showroom",
+          deliveryMethod: delivery,
+          paymentMethod: payment,
+          items: items.map((i) => ({
+            productId: i.productId,
+            variantSku: i.variantSku,
+            productName: i.productName,
+            unitPrice: i.unitPrice,
+            quantity: i.quantity,
+          })),
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body.success) {
+        setError(body.message || "Đặt hàng thất bại, vui lòng thử lại.");
+        return;
+      }
+      setOrderNumber(body.data.orderNumber);
+      clear();
+    } catch {
+      setError("Không kết nối được hệ thống. Backend đã chạy chưa?");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (orderNumber) {
+    return (
+      <div className="rounded-xl border bg-white p-6 text-center">
+        <p className="text-4xl">✅</p>
+        <h2 className="mt-3 font-bold">Đặt hàng thành công!</h2>
+        <p className="mt-2 text-sm text-neutral-600">
+          Mã đơn của bạn: <strong className="text-brand-600">{orderNumber}</strong>
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">Chúng tôi sẽ gọi xác nhận trong thời gian sớm nhất.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border bg-white p-6">
+      <h2 className="font-bold">Thanh toán</h2>
+
+      <input
+        required
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Họ và tên *"
+        className="w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+      />
+      <input
+        required
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        placeholder="Số điện thoại * (09xxxxxxxx)"
+        className="w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+      />
+      <input
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        placeholder="Địa chỉ giao hàng"
+        className="w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+      />
+
+      <select
+        value={delivery}
+        onChange={(e) => setDelivery(e.target.value)}
+        className="w-full rounded-lg border px-3 py-2 text-sm"
+      >
+        {DELIVERY_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+
+      <select
+        value={payment}
+        onChange={(e) => setPayment(e.target.value)}
+        className="w-full rounded-lg border px-3 py-2 text-sm"
+      >
+        {PAYMENT_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+
+      <div className="flex justify-between border-t pt-4 text-lg font-bold">
+        <span>Tổng cộng</span>
+        <span className="text-brand-600">{formatVnd(totalAmount)}</span>
+      </div>
+
+      {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
+
+      <button type="submit" disabled={submitting} className="btn-primary w-full text-base">
+        {submitting ? "Đang xử lý..." : "Đặt hàng"}
+      </button>
+      <p className="text-center text-xs text-neutral-400">
+        Bằng việc đặt hàng, bạn đồng ý với chính sách đổi trả và bảo hành của Harness.
+      </p>
+    </form>
+  );
+}

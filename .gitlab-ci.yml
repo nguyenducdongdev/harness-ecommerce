@@ -1,0 +1,128 @@
+# Harness Ecommerce — CI/CD
+# GitLab self-hosted. Cần runner có docker executor.
+# Biến CI/CD cần đặt: REGISTRY (VD: registry.example.vn), REGISTRY_USER, REGISTRY_PASSWORD
+
+stages:
+  - build
+  - test
+  - package
+
+variables:
+  DOTNET_VERSION: "8.0"
+  NODE_VERSION: "20"
+
+# ==================== BACKEND ====================
+backend:build:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  script:
+    - cd backend
+    - dotnet restore HarnessEcommerce.sln
+    - dotnet build HarnessEcommerce.sln -c Release --no-restore
+  cache:
+    key: nuget-$CI_COMMIT_REF_SLUG
+    paths:
+      - backend/.nuke/
+
+backend:test:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  script:
+    - cd backend
+    - dotnet test tests/Harness.UnitTests/Harness.UnitTests.csproj -c Release --logger "junit;LogFilePath=test-result.xml"
+    - dotnet test tests/Harness.IntegrationTests/Harness.IntegrationTests.csproj -c Release --logger "junit;LogFilePath=test-result.xml"
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - backend/tests/Harness.UnitTests/test-result.xml
+        - backend/tests/Harness.IntegrationTests/test-result.xml
+  # TODO Phase 2: thêm services postgres:16 cho integration test thật
+
+backend:docker:
+  stage: package
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - docker login -u $REGISTRY_USER -p $REGISTRY_PASSWORD $REGISTRY
+    - docker build -f docker/api/Dockerfile -t $REGISTRY/harness/api:$CI_COMMIT_SHORT_SHA backend/
+    - docker build -f docker/api/Dockerfile -t $REGISTRY/harness/api:latest backend/
+    - docker push $REGISTRY/harness/api:$CI_COMMIT_SHORT_SHA
+    - docker push $REGISTRY/harness/api:latest
+  only:
+    - main
+    - tags
+
+# ==================== WEB (Next.js) ====================
+web:build:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd web
+    - npm ci
+    - npm run build
+  cache:
+    key: web-node-modules-$CI_COMMIT_REF_SLUG
+    paths:
+      - web/node_modules/
+
+web:docker:
+  stage: package
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - docker login -u $REGISTRY_USER -p $REGISTRY_PASSWORD $REGISTRY
+    - cd web
+    - |
+      cat > Dockerfile <<'EOF'
+      FROM node:20-alpine AS build
+      WORKDIR /app
+      COPY package*.json ./
+      RUN npm ci
+      COPY . .
+      RUN npm run build
+
+      FROM node:20-alpine
+      WORKDIR /app
+      ENV NODE_ENV=production
+      COPY --from=build /app/.next/standalone ./
+      COPY --from=build /app/.next/static ./.next/static
+      COPY --from=build /app/public ./public
+      EXPOSE 3000
+      CMD ["node", "server.js"]
+      EOF
+    - docker build -t $REGISTRY/harness/web:$CI_COMMIT_SHORT_SHA .
+    - docker push $REGISTRY/harness/web:$CI_COMMIT_SHORT_SHA
+  only:
+    - main
+    - tags
+
+# ==================== ADMIN (Vite) ====================
+admin:build:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd admin
+    - npm ci
+    - npm run build
+  cache:
+    key: admin-node-modules-$CI_COMMIT_REF_SLUG
+    paths:
+      - admin/node_modules/
+
+# ==================== DEPLOY (on-premise qua SSH) ====================
+# Bật khi có server — runner cần SSH private key ở biến DEPLOY_SSH_KEY
+# deploy:production:
+#   stage: deploy
+#   image: alpine:3.20
+#   before_script:
+#     - apk add --no-cache openssh-client
+#     - eval $(ssh-agent -s)
+#     - echo "$DEPLOY_SSH_KEY" | ssh-add -
+#   script:
+#     - ssh deploy@SERVER "cd /opt/harness && docker compose pull && docker compose up -d && docker image prune -f"
+#   only:
+#     - tags
+#   environment: production

@@ -1,0 +1,49 @@
+# Hạ tầng dev local (nhẹ — chỉ những gì backend cần để chạy/debug)
+# Chạy:  docker compose -f docker-compose.dev.yml up -d
+
+name: harness-dev
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    container_name: harness-dev-postgres
+    environment:
+      POSTGRES_DB: harness
+      POSTGRES_USER: harness
+      POSTGRES_PASSWORD: harness
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: harness-dev-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: harness-dev-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: harness
+      RABBITMQ_DEFAULT_PASS: harness
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+
+  seq:
+    image: datalust/seq:latest
+    container_name: harness-dev-seq
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+      - "5342:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata_dev:
