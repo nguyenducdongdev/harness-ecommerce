@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { fetchFromServer, type Category, type PagedResult, type Product } from "@/lib/api";
+import { FlashSaleSection } from "@/components/FlashSaleSection";
 
 export const revalidate = 120; // ISR: regenerate mỗi 2 phút
 
@@ -69,6 +70,9 @@ export default async function HomePage() {
           </p>
         )}
       </section>
+
+      {/* Flash sale đang diễn ra */}
+      <FlashSaleSection compact />
 
       {/* Cam kết */}
       <section className="grid gap-4 md:grid-cols-4">

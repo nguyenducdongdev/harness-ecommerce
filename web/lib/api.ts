@@ -95,3 +95,55 @@ export const api = {
   getProduct: (slug: string) => fetchApi<Product>(`/api/v1/products/${slug}`),
   getCategories: () => fetchApi<Category[]>("/api/v1/categories"),
 };
+
+// ===== Promotion: Flash Sale =====
+export interface FlashSaleItemDto {
+  id: number;
+  productId: number;
+  productName: string;
+  productSlug: string | null;
+  productPrice: number | null;
+  imageUrl: string | null;
+  salePrice: number;
+  quantityLimit: number;
+  quantitySold: number;
+  isSoldOut: boolean;
+}
+
+export interface FlashSaleDto {
+  id: number;
+  name: string;
+  startAt: string;
+  endAt: string;
+  items: FlashSaleItemDto[];
+}
+
+// ===== Promotion: Voucher =====
+export interface VoucherResult {
+  isValid: boolean;
+  discountAmount: number;
+  message: string;
+}
+
+// ===== Shipping: carrier quote =====
+export interface ShippingFeeResult {
+  carrier: string;
+  fee: number;
+  estimatedDays: string;
+  success: boolean;
+  message: string;
+  rawResponse?: string | null;
+}
+
+export const promotionApi = {
+  activeFlashSales: () => fetchApi<FlashSaleDto[]>("/api/v1/flash-sales/active"),
+  validateVoucher: (code: string, orderAmount: number) =>
+    fetchApi<VoucherResult>(
+      `/api/v1/vouchers/validate?code=${encodeURIComponent(code)}&orderAmount=${orderAmount}`,
+    ),
+  carrierQuote: (carrier: "Ghn" | "Ghtk", params: Record<string, string | number>) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => qs.set(k, String(v)));
+    return fetchApi<ShippingFeeResult>(`/api/v1/shipping/quotes/carriers/${carrier}/quote?${qs}`);
+  },
+};

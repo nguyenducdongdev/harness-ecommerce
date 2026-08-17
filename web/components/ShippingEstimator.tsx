@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { formatVnd } from "@/lib/format";
+import { promotionApi, type ShippingFeeResult } from "@/lib/api";
 
 interface ShippingQuote {
   volumetricWeight: number;
@@ -19,42 +20,69 @@ interface Props {
   defaultHeightCm: number;
 }
 
-/** Ước tính phí vận chuyển theo thể tích (W×D×H / 6000) — gọi /api/v1/shipping/quotes/quote. */
+type CarrierKey = "local" | "Ghn" | "Ghtk";
+
+const CARRIER_LABELS: Record<CarrierKey, string> = {
+  local: "Nội bộ (thể tích)",
+  Ghn: "GHN",
+  Ghtk: "GHTK",
+};
+
+/** Ước tính phí vận chuyển theo thể tích (W×D×H / 6000) — gọi /api/v1/shipping/quotes/quote hoặc carrier endpoint. */
 export default function ShippingEstimator({ defaultWidthCm, defaultDepthCm, defaultHeightCm }: Props) {
   const [widthCm, setWidthCm] = useState(defaultWidthCm);
   const [depthCm, setDepthCm] = useState(defaultDepthCm);
   const [heightCm, setHeightCm] = useState(defaultHeightCm);
   const [weightKg, setWeightKg] = useState(0);
   const [zone, setZone] = useState("noi-thanh");
+  const [carrier, setCarrier] = useState<CarrierKey>("local");
   const [quote, setQuote] = useState<ShippingQuote | null>(null);
+  const [carrierResult, setCarrierResult] = useState<ShippingFeeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const estimate = useCallback(async (w: number, d: number, h: number, kg: number, z: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const qs = new URLSearchParams({
-        widthCm: String(w),
-        depthCm: String(d),
-        heightCm: String(h),
-        weightKg: String(kg || 0),
-        zone: z,
-      });
-      const res = await fetch(`/api/v1/shipping/quotes/quote?${qs}`);
-      const body = await res.json();
-      if (!res.ok || !body.success) throw new Error(body.message || "Không tính được phí ship.");
-      setQuote(body.data as ShippingQuote);
-    } catch (err) {
-      setQuote(null);
-      setError(err instanceof Error ? err.message : "Không kết nối được dịch vụ tính phí ship.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const estimate = useCallback(
+    async (w: number, d: number, h: number, kg: number, z: string, c: CarrierKey) => {
+      setLoading(true);
+      setError(null);
+      setCarrierResult(null);
+      try {
+        if (c === "local") {
+          const qs = new URLSearchParams({
+            widthCm: String(w),
+            depthCm: String(d),
+            heightCm: String(h),
+            weightKg: String(kg || 0),
+            zone: z,
+          });
+          const res = await fetch(`/api/v1/shipping/quotes/quote?${qs}`);
+          const body = await res.json();
+          if (!res.ok || !body.success) throw new Error(body.message || "Không tính được phí ship.");
+          setQuote(body.data as ShippingQuote);
+        } else {
+          const result = await promotionApi.carrierQuote(c, {
+            toDistrictId: 3695,
+            toWardCode: "90753",
+            weightKg: Math.round(kg || 1),
+            lengthCm: w,
+            widthCm: d,
+            heightCm: h,
+          });
+          setCarrierResult(result);
+          setQuote(null);
+        }
+      } catch (err) {
+        setQuote(null);
+        setError(err instanceof Error ? err.message : "Không kết nối được dịch vụ tính phí ship.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    estimate(defaultWidthCm, defaultDepthCm, defaultHeightCm, 0, "noi-thanh");
+    estimate(defaultWidthCm, defaultDepthCm, defaultHeightCm, 0, "noi-thanh", "local");
   }, [defaultWidthCm, defaultDepthCm, defaultHeightCm, estimate]);
 
   return (
@@ -104,18 +132,23 @@ export default function ShippingEstimator({ defaultWidthCm, defaultDepthCm, defa
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <select
-          value={zone}
-          onChange={(e) => setZone(e.target.value)}
-          className="rounded border border-neutral-300 px-2 py-1.5 text-sm"
-        >
+        <select value={zone} onChange={(e) => setZone(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm">
           <option value="noi-thanh">Nội thành</option>
           <option value="ngoai-thanh">Ngoại thành</option>
           <option value="tinh">Liên tỉnh</option>
         </select>
+        <select
+          value={carrier}
+          onChange={(e) => setCarrier(e.target.value as CarrierKey)}
+          className="rounded border border-neutral-300 px-2 py-1.5 text-sm"
+        >
+          {(Object.keys(CARRIER_LABELS) as CarrierKey[]).map((k) => (
+            <option key={k} value={k}>{CARRIER_LABELS[k]}</option>
+          ))}
+        </select>
         <button
           type="button"
-          onClick={() => estimate(widthCm, depthCm, heightCm, weightKg, zone)}
+          onClick={() => estimate(widthCm, depthCm, heightCm, weightKg, zone, carrier)}
           disabled={loading}
           className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
@@ -125,7 +158,27 @@ export default function ShippingEstimator({ defaultWidthCm, defaultDepthCm, defa
 
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-      {quote && (
+      {carrier !== "local" && carrierResult && (
+        <div className="mt-4 rounded-lg bg-neutral-50 p-4 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-neutral-500">Phí {CARRIER_LABELS[carrier]}:</span>
+            <span className="text-xl font-bold text-brand-600">
+              {carrierResult.success ? formatVnd(carrierResult.fee) : "—"}
+            </span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-neutral-500">
+            <span>Thời gian giao:</span>
+            <span className="font-medium text-neutral-700">{carrierResult.success ? carrierResult.estimatedDays : "—"}</span>
+          </div>
+          <p className="mt-2 rounded bg-brand-50 px-3 py-2 text-brand-700">
+            {carrierResult.success
+              ? carrierResult.message
+              : `${carrierResult.message} (bật cấu hình Shipping:${carrier} trong appsettings hoặc chọn "Nội bộ" để xem giá ước tính).`}
+          </p>
+        </div>
+      )}
+
+      {carrier === "local" && quote && (
         <div className="mt-4 rounded-lg bg-neutral-50 p-4 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-neutral-500">Phí ước tính ({quote.zoneLabel}):</span>

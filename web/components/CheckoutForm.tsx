@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatVnd } from "@/lib/format";
 import { useCart } from "@/store/cart";
+import { promotionApi } from "@/lib/api";
 
 interface Props {
   totalAmount: number;
@@ -43,6 +44,34 @@ export function CheckoutForm({ totalAmount }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [voucherMessage, setVoucherMessage] = useState("");
+  const [voucherError, setVoucherError] = useState("");
+  const [applyingVoucher, setApplyingVoucher] = useState(false);
+
+  async function applyVoucher(e: React.MouseEvent) {
+    e.preventDefault();
+    setVoucherError("");
+    setVoucherMessage("");
+    const code = voucherCode.trim();
+    if (!code) return;
+    setApplyingVoucher(true);
+    try {
+      const result = await promotionApi.validateVoucher(code, totalAmount);
+      if (!result.isValid) {
+        setDiscountAmount(0);
+        setVoucherError(result.message || "Mã giảm giá không áp dụng được.");
+        return;
+      }
+      setDiscountAmount(result.discountAmount);
+      setVoucherMessage(`Giảm ${formatVnd(result.discountAmount)} — ${result.message}`);
+    } catch {
+      setVoucherError("Không kiểm tra được mã giảm giá.");
+    } finally {
+      setApplyingVoucher(false);
+    }
+  }
 
   async function redirectToVnPay(order: CreatedOrder, clientIp: string) {
     // Cất mã đơn để auto-tra cứu khi VNPay đưa khách về /track
@@ -85,6 +114,7 @@ export function CheckoutForm({ totalAmount }: Props) {
           shippingAddress: address || "Nhận tại showroom",
           deliveryMethod: delivery,
           paymentMethod: payment,
+          discountAmount,
           items: items.map((i) => ({
             productId: i.productId,
             variantSku: i.variantSku,
@@ -186,9 +216,60 @@ export function CheckoutForm({ totalAmount }: Props) {
         </p>
       )}
 
-      <div className="flex justify-between border-t pt-4 text-lg font-bold">
-        <span>Tổng cộng</span>
-        <span className="text-brand-600">{formatVnd(totalAmount)}</span>
+      <div className="rounded-lg border border-dashed border-neutral-300 p-3">
+        <label className="mb-1 block text-xs font-medium text-neutral-600">Mã giảm giá (voucher)</label>
+        <div className="flex gap-2">
+          <input
+            value={voucherCode}
+            onChange={(e) => {
+              setVoucherCode(e.target.value);
+              setVoucherError("");
+              setVoucherMessage("");
+            }}
+            placeholder="Nhập mã (VD: WELCOME10)"
+            className="flex-1 rounded-lg border px-3 py-2 text-sm uppercase focus:border-brand-500 focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={applyVoucher}
+            disabled={applyingVoucher || !voucherCode.trim()}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+          >
+            {applyingVoucher ? "..." : "Áp dụng"}
+          </button>
+        </div>
+        {voucherMessage && <p className="mt-2 text-xs font-medium text-green-600">{voucherMessage}</p>}
+        {voucherError && <p className="mt-2 text-xs font-medium text-red-600">{voucherError}</p>}
+        {discountAmount > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setDiscountAmount(0);
+              setVoucherCode("");
+              setVoucherMessage("");
+            }}
+            className="mt-1 text-xs text-brand-600 hover:underline"
+          >
+            Bỏ mã giảm giá
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-1 border-t pt-3 text-sm">
+        <div className="flex justify-between text-neutral-600">
+          <span>Tạm tính</span>
+          <span>{formatVnd(totalAmount)}</span>
+        </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-green-600">
+            <span>Giảm giá</span>
+            <span>-{formatVnd(discountAmount)}</span>
+          </div>
+        )}
+        <div className="flex justify-between border-t pt-2 text-lg font-bold">
+          <span>Tổng cộng</span>
+          <span className="text-brand-600">{formatVnd(Math.max(0, totalAmount - discountAmount))}</span>
+        </div>
       </div>
 
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}

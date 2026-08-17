@@ -1,5 +1,6 @@
 using FluentValidation;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
+using Harness.Modules.Catalog.Domain;
 using Harness.Modules.Promotion.Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -80,19 +81,38 @@ public class GetActiveFlashSalesQueryHandler : IRequestHandler<GetActiveFlashSal
             .OrderBy(x => x.StartAt)
             .ToListAsync(cancellationToken);
 
-        return sales.Select(Map).ToList();
+        var productIds = sales.SelectMany(x => x.Items.Select(i => i.ProductId)).Distinct().ToList();
+        var products = await _db.Set<Product>().AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p, cancellationToken);
+
+        return sales.Select(x => Map(x, products)).ToList();
     }
 
-    private static FlashSaleDto Map(FlashSale flashSale)
+    private static FlashSaleDto Map(FlashSale flashSale, IReadOnlyDictionary<int, Product> products)
     {
         return new FlashSaleDto(
             flashSale.Id,
             flashSale.Name,
             flashSale.StartAt,
             flashSale.EndAt,
-            flashSale.Items.Select(i => new FlashSaleItemDto(i.Id, i.ProductId, i.SalePrice, i.QuantityLimit, i.QuantitySold, i.IsSoldOut)).ToList());
+            flashSale.Items.Select(i =>
+            {
+                var hasProduct = products.TryGetValue(i.ProductId, out var product);
+                return new FlashSaleItemDto(
+                    i.Id, i.ProductId,
+                    product?.Name ?? $"Sản phẩm #{i.ProductId}",
+                    product?.Slug,
+                    product?.Price,
+                    product?.ImageUrls.FirstOrDefault(),
+                    i.SalePrice, i.QuantityLimit, i.QuantitySold, i.IsSoldOut);
+            }).ToList());
     }
 }
 
-public record FlashSaleItemDto(int Id, int ProductId, decimal SalePrice, int QuantityLimit, int QuantitySold, bool IsSoldOut);
+public record FlashSaleItemDto(
+    int Id, int ProductId, string ProductName, string? ProductSlug,
+    decimal? ProductPrice, string? ImageUrl,
+    decimal SalePrice, int QuantityLimit, int QuantitySold, bool IsSoldOut);
+
 public record FlashSaleDto(int Id, string Name, DateTimeOffset StartAt, DateTimeOffset EndAt, IReadOnlyList<FlashSaleItemDto> Items);
