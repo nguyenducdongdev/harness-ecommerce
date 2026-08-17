@@ -39,7 +39,7 @@ public class ProductIndexer : IProductIndexer, IProductSearch
 
         try
         {
-            var exists = await _client.Indices.ExistsAsync(_options.IndexProducts, ct);
+            var exists = await _client.Indices.ExistsAsync(_options.IndexProducts, ct: ct);
             if (!exists.Exists)
             {
                 await _client.Indices.CreateAsync(_options.IndexProducts, c => c

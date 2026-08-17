@@ -5,6 +5,7 @@ using Harness.Modules.Catalog.Application.Commands;
 using Harness.Modules.Catalog.Application.Dtos;
 using Harness.Modules.Catalog.Application.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Catalog.Presentation;

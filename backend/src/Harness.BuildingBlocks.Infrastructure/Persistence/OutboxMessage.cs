@@ -8,6 +8,8 @@ namespace Harness.BuildingBlocks.Infrastructure.Persistence;
 /// </summary>
 public class OutboxMessage : Entity<Guid>
 {
+    public OutboxMessage() => Id = Guid.NewGuid();
+
     public string EventType { get; set; } = default!;
     public string Payload { get; set; } = default!;
     public DateTimeOffset OccurredAt { get; set; }

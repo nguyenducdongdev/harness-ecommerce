@@ -2,6 +2,7 @@ using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Catalog.Application.Abstractions;
 using Harness.Modules.Catalog.Infrastructure.Search;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Catalog.Presentation;
@@ -16,10 +17,10 @@ public class SearchController : ApiController
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<ProductSearchDocument>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Products(
         [FromQuery] string q,
+        [FromServices] IProductSearch search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
-        [FromServices] IProductSearch search,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var size = Math.Clamp(pageSize, 1, 100);
         var from = Math.Max(page - 1, 0) * size;

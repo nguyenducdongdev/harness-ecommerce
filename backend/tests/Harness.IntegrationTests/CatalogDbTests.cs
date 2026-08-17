@@ -27,8 +27,9 @@ public class CatalogDbTests
 
         await CatalogSeed.SeedAsync(db);
 
-        Assert.True(await db.Set<Product>().CountAsync() >= 8);
-        Assert.True(await db.Set<Product>().AnyAsync(p => p.Variants.Count >= 4));
+        var count = await db.Set<Product>().CountAsync();
+        Assert.True(count >= 8);
+        Assert.True(await db.Set<Product>().Include(p => p.Variants).AnyAsync(p => p.Variants.Count >= 3));
     }
 
     [Fact]

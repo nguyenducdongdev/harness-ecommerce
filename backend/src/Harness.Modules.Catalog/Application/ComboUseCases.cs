@@ -63,7 +63,7 @@ public class GetCombosQueryHandler : IRequestHandler<GetCombosQuery, IReadOnlyLi
 
     public async Task<IReadOnlyList<ComboDto>> Handle(GetCombosQuery request, CancellationToken cancellationToken)
     {
-        var query = _db.Set<RoomCombo>().AsNoTracking().Include(c => c.Items);
+        IQueryable<RoomCombo> query = _db.Set<RoomCombo>().AsNoTracking().Include(c => c.Items);
         if (request.OnlyActive) query = query.Where(c => c.IsActive);
 
         var combos = await query.OrderBy(c => c.Id).ToListAsync(cancellationToken);

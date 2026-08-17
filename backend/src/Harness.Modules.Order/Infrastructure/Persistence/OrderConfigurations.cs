@@ -1,12 +1,13 @@
+using OrderEntity = Harness.Modules.Order.Domain.Order;
 using Harness.Modules.Order.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Harness.Modules.Order.Infrastructure.Persistence;
 
-public class OrderConfiguration : IEntityTypeConfiguration<Order>
+public class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
 {
-    public void Configure(EntityTypeBuilder<Order> builder)
+    public void Configure(EntityTypeBuilder<OrderEntity> builder)
     {
         builder.ToTable("orders", "orders");
         builder.HasKey(x => x.Id);

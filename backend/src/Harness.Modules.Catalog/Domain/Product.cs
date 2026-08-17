@@ -34,7 +34,7 @@ public class Product : AuditableEntity<int>
     public List<string> ImageUrls { get; private set; } = new();
 
     private readonly List<ProductVariant> _variants = new();
-    public IReadOnlyCollection<ProductVariant> Variants => _variants.AsReadOnly();
+    public ICollection<ProductVariant> Variants => _variants;
 
     private Product() { } // EF
 

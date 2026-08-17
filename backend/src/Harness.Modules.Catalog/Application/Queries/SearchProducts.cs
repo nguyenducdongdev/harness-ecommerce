@@ -45,8 +45,8 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
             query = query.Where(x => x.p.Name.ToLower().Contains(term) || x.p.Sku.ToLower().Contains(term));
         }
         if (request.BrandId.HasValue) query = query.Where(x => x.p.BrandId == request.BrandId);
-        if (request.MinPrice.HasValue) query = query.Where(x => x.Price >= request.MinPrice);
-        if (request.MaxPrice.HasValue) query = query.Where(x => x.Price <= request.MaxPrice);
+        if (request.MinPrice.HasValue) query = query.Where(x => x.p.Price >= request.MinPrice);
+        if (request.MaxPrice.HasValue) query = query.Where(x => x.p.Price <= request.MaxPrice);
 
         // Lọc theo thuộc tính JSONB (ví dụ: phong-cach=Hiện đại, chat-lieu=Gỗ óc chó)
         if (request.Attributes is { Count: > 0 })

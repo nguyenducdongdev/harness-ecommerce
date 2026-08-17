@@ -1,12 +1,13 @@
 using Harness.Modules.Review.Domain;
+using ReviewEntity = Harness.Modules.Review.Domain.Review;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Harness.Modules.Review.Infrastructure.Persistence;
 
-public class ReviewConfiguration : IEntityTypeConfiguration<Review>
+public class ReviewConfiguration : IEntityTypeConfiguration<ReviewEntity>
 {
-    public void Configure(EntityTypeBuilder<Review> builder)
+    public void Configure(EntityTypeBuilder<ReviewEntity> builder)
     {
         builder.ToTable("reviews", "review");
         builder.HasKey(x => x.Id);

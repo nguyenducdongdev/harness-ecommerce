@@ -15,17 +15,17 @@ public class AppDbContext : DbContext, IHarnessDbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Catalog.Infrastructure.Persistence.CatalogConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Order.Infrastructure.Persistence.OrderConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Inventory.Infrastructure.Persistence.InventoryConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Customer.Infrastructure.Persistence.CustomerConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Promotion.Infrastructure.Persistence.PromotionConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Payment.Infrastructure.Persistence.PaymentConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Shipping.Infrastructure.Persistence.ShippingConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Loyalty.Infrastructure.Persistence.LoyaltyConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Review.Infrastructure.Persistence.ReviewConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Cms.Infrastructure.Persistence.CmsConfigurations).Assembly);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Integration.Infrastructure.Persistence.IntegrationConfigurations).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Catalog.Infrastructure.Persistence.CategoryConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Order.Infrastructure.Persistence.OrderConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Inventory.Infrastructure.Persistence.WarehouseConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Customer.Infrastructure.Persistence.CustomerConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Promotion.Infrastructure.Persistence.VoucherConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Payment.Infrastructure.Persistence.PaymentTransactionConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Shipping.Infrastructure.Persistence.ShipmentConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Loyalty.Infrastructure.Persistence.LoyaltyAccountConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Review.Infrastructure.Persistence.ReviewConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Cms.Infrastructure.Persistence.BannerConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Integration.Infrastructure.Persistence.IntegrationSyncLogConfiguration).Assembly);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -39,6 +39,7 @@ public class AppDbContext : DbContext, IHarnessDbContext
     }
 
     private static void SetAuditFields<T>(AuditableEntity<T> entity, string state, DateTimeOffset now)
+        where T : IEquatable<T>
     {
         if (state == "Added") entity.CreatedAt = now;
         else if (state == "Modified") entity.ModifiedAt = now;

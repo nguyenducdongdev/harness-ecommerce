@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Harness.BuildingBlocks.Application;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Harness.BuildingBlocks.Presentation.Middleware;
 

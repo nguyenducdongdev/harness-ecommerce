@@ -14,7 +14,7 @@ public class AdjustStockCommandValidator : AbstractValidator<AdjustStockCommand>
     {
         RuleFor(x => x.WarehouseId).GreaterThan(0);
         RuleFor(x => x.VariantSku).NotEmpty().MaximumLength(64);
-        RuleFor(x => x.Delta).NotEqual(0).WithMessage("Số lượng điều chỉnh phải khác 0.");
+        RuleFor(x => x.Delta).NotEqual(0).WithMessage("S? lu?ng di?u ch?nh ph?i kh�c 0.");
         RuleFor(x => x.Reference).NotEmpty().MaximumLength(50);
     }
 }
@@ -33,7 +33,7 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Sto
         if (stock is null)
         {
             if (request.Delta < 0)
-                throw new InvalidOperationException("Không thể trừ tồn kho chưa khởi tạo.");
+                throw new InvalidOperationException("Kh�ng th? tr? t?n kho chua kh?i t?o.");
             stock = StockLevel.Create(request.WarehouseId, request.VariantSku, request.Delta);
             _db.Set<StockLevel>().Add(stock);
         }
@@ -44,7 +44,6 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Sto
 
         _db.Set<StockMovement>().Add(new StockMovement
         {
-            Id = Guid.NewGuid(),
             WarehouseId = request.WarehouseId,
             VariantSku = request.VariantSku,
             Type = MovementType.Adjustment,
@@ -92,17 +91,22 @@ public class SetStockCommandHandler : IRequestHandler<SetStockCommand, StockDto>
         else
         {
             delta = request.Quantity - stock.QuantityAvailable;
-            stock.Adjust(delta);
+            if (delta != 0)
+                stock.Adjust(delta);
         }
 
         _db.Set<StockMovement>().Add(new StockMovement
         {
-            Id = Guid.NewGuid(), WarehouseId = request.WarehouseId, VariantSku = request.VariantSku,
-            Type = MovementType.Adjustment, Quantity = delta, Reference = request.Reference
+            WarehouseId = request.WarehouseId,
+            VariantSku = request.VariantSku,
+            Type = MovementType.Adjustment,
+            Quantity = delta,
+            Reference = request.Reference
         });
-        _db.AddToOutbox(new StockChangedIntegrationEvent(request.WarehouseId, request.VariantSku, stock.QuantityAvailable, request.Reference));
-        await _db.SaveChangesAsync(cancellationToken);
+        _db.AddToOutbox(new StockChangedIntegrationEvent(
+            request.WarehouseId, request.VariantSku, stock.QuantityAvailable, request.Reference));
 
+        await _db.SaveChangesAsync(cancellationToken);
         return new StockDto(stock.WarehouseId, stock.VariantSku, stock.QuantityAvailable, stock.QuantityReserved);
     }
 }
@@ -115,7 +119,7 @@ public class ReserveStockCommandValidator : AbstractValidator<ReserveStockComman
     {
         RuleFor(x => x.WarehouseId).GreaterThan(0);
         RuleFor(x => x.VariantSku).NotEmpty().MaximumLength(64);
-        RuleFor(x => x.Quantity).GreaterThan(0);
+        RuleFor(x => x.Quantity).InclusiveBetween(1, int.MaxValue);
         RuleFor(x => x.Reference).NotEmpty().MaximumLength(50);
     }
 }
@@ -130,18 +134,22 @@ public class ReserveStockCommandHandler : IRequestHandler<ReserveStockCommand, S
     {
         var stock = await _db.Set<StockLevel>()
             .FirstOrDefaultAsync(s => s.WarehouseId == request.WarehouseId && s.VariantSku == request.VariantSku, cancellationToken)
-            ?? throw new InvalidOperationException($"Chưa khai báo tồn kho cho SKU {request.VariantSku} ở kho #{request.WarehouseId}.");
+            ?? throw new InvalidOperationException($"Chua co ton kho cho {request.VariantSku} tai kho #{request.WarehouseId}.");
 
         stock.Reserve(request.Quantity);
 
         _db.Set<StockMovement>().Add(new StockMovement
         {
-            Id = Guid.NewGuid(), WarehouseId = request.WarehouseId, VariantSku = request.VariantSku,
-            Type = MovementType.Reservation, Quantity = request.Quantity, Reference = request.Reference
+            WarehouseId = request.WarehouseId,
+            VariantSku = request.VariantSku,
+            Type = MovementType.Reservation,
+            Quantity = request.Quantity,
+            Reference = request.Reference
         });
-        _db.AddToOutbox(new StockChangedIntegrationEvent(request.WarehouseId, request.VariantSku, stock.QuantityAvailable, request.Reference));
-        await _db.SaveChangesAsync(cancellationToken);
+        _db.AddToOutbox(new StockChangedIntegrationEvent(
+            request.WarehouseId, request.VariantSku, stock.QuantityAvailable, request.Reference));
 
+        await _db.SaveChangesAsync(cancellationToken);
         return new StockDto(stock.WarehouseId, stock.VariantSku, stock.QuantityAvailable, stock.QuantityReserved);
     }
 }
@@ -154,7 +162,7 @@ public class ReleaseStockCommandValidator : AbstractValidator<ReleaseStockComman
     {
         RuleFor(x => x.WarehouseId).GreaterThan(0);
         RuleFor(x => x.VariantSku).NotEmpty().MaximumLength(64);
-        RuleFor(x => x.Quantity).GreaterThan(0);
+        RuleFor(x => x.Quantity).InclusiveBetween(1, int.MaxValue);
         RuleFor(x => x.Reference).NotEmpty().MaximumLength(50);
     }
 }
@@ -169,35 +177,36 @@ public class ReleaseStockCommandHandler : IRequestHandler<ReleaseStockCommand, S
     {
         var stock = await _db.Set<StockLevel>()
             .FirstOrDefaultAsync(s => s.WarehouseId == request.WarehouseId && s.VariantSku == request.VariantSku, cancellationToken)
-            ?? throw new InvalidOperationException($"Không tìm thấy tồn kho SKU {request.VariantSku} ở kho #{request.WarehouseId}.");
+            ?? throw new InvalidOperationException($"Chua co ton kho cho {request.VariantSku} tai kho #{request.WarehouseId}.");
 
         stock.ReleaseReservation(request.Quantity);
 
         _db.Set<StockMovement>().Add(new StockMovement
         {
-            Id = Guid.NewGuid(), WarehouseId = request.WarehouseId, VariantSku = request.VariantSku,
-            Type = MovementType.Release, Quantity = request.Quantity, Reference = request.Reference
+            WarehouseId = request.WarehouseId,
+            VariantSku = request.VariantSku,
+            Type = MovementType.Release,
+            Quantity = request.Quantity,
+            Reference = request.Reference
         });
-        _db.AddToOutbox(new StockChangedIntegrationEvent(request.WarehouseId, request.VariantSku, stock.QuantityAvailable, request.Reference));
-        await _db.SaveChangesAsync(cancellationToken);
+        _db.AddToOutbox(new StockChangedIntegrationEvent(
+            request.WarehouseId, request.VariantSku, stock.QuantityAvailable, request.Reference));
 
+        await _db.SaveChangesAsync(cancellationToken);
         return new StockDto(stock.WarehouseId, stock.VariantSku, stock.QuantityAvailable, stock.QuantityReserved);
     }
 }
 
-public record TransferStockCommand(
-    int FromWarehouseId, int ToWarehouseId, string VariantSku, int Quantity, string Reference) : IRequest<IReadOnlyList<StockDto>>;
+public record TransferStockCommand(int FromWarehouseId, int ToWarehouseId, string VariantSku, int Quantity, string Reference) : IRequest<IReadOnlyList<StockDto>>;
 
 public class TransferStockCommandValidator : AbstractValidator<TransferStockCommand>
 {
     public TransferStockCommandValidator()
     {
-        RuleFor(x => x.FromWarehouseId).GreaterThan(0);
+        RuleFor(x => x.FromWarehouseId).GreaterThan(0).NotEqual(x => x.ToWarehouseId).WithMessage("Kho nguon va kho dich phai khac nhau.");
         RuleFor(x => x.ToWarehouseId).GreaterThan(0);
-        RuleFor(x => x.FromWarehouseId).NotEqual(x => x.ToWarehouseId)
-            .WithMessage("Kho nguồn và kho đích phải khác nhau.");
         RuleFor(x => x.VariantSku).NotEmpty().MaximumLength(64);
-        RuleFor(x => x.Quantity).GreaterThan(0);
+        RuleFor(x => x.Quantity).InclusiveBetween(1, int.MaxValue);
         RuleFor(x => x.Reference).NotEmpty().MaximumLength(50);
     }
 }
@@ -212,9 +221,9 @@ public class TransferStockCommandHandler : IRequestHandler<TransferStockCommand,
     {
         var from = await _db.Set<StockLevel>()
             .FirstOrDefaultAsync(s => s.WarehouseId == request.FromWarehouseId && s.VariantSku == request.VariantSku, cancellationToken)
-            ?? throw new InvalidOperationException($"Kho nguồn #{request.FromWarehouseId} chưa khai báo tồn kho {request.VariantSku}.");
+            ?? throw new InvalidOperationException($"Kho nguon #{request.FromWarehouseId} chua khai bao ton kho {request.VariantSku}.");
 
-        from.Adjust(-request.Quantity); // ngăn chuyển nhiều hơn tồn kho
+        from.Adjust(-request.Quantity);
 
         var to = await _db.Set<StockLevel>()
             .FirstOrDefaultAsync(s => s.WarehouseId == request.ToWarehouseId && s.VariantSku == request.VariantSku, cancellationToken);
@@ -230,13 +239,19 @@ public class TransferStockCommandHandler : IRequestHandler<TransferStockCommand,
 
         _db.Set<StockMovement>().Add(new StockMovement
         {
-            Id = Guid.NewGuid(), WarehouseId = request.FromWarehouseId, VariantSku = request.VariantSku,
-            Type = MovementType.TransferOut, Quantity = request.Quantity, Reference = request.Reference
+            WarehouseId = request.FromWarehouseId,
+            VariantSku = request.VariantSku,
+            Type = MovementType.TransferOut,
+            Quantity = request.Quantity,
+            Reference = request.Reference
         });
         _db.Set<StockMovement>().Add(new StockMovement
         {
-            Id = Guid.NewGuid(), WarehouseId = request.ToWarehouseId, VariantSku = request.VariantSku,
-            Type = MovementType.TransferIn, Quantity = request.Quantity, Reference = request.Reference
+            WarehouseId = request.ToWarehouseId,
+            VariantSku = request.VariantSku,
+            Type = MovementType.TransferIn,
+            Quantity = request.Quantity,
+            Reference = request.Reference
         });
         _db.AddToOutbox(new StockChangedIntegrationEvent(request.FromWarehouseId, request.VariantSku, from.QuantityAvailable, request.Reference));
         _db.AddToOutbox(new StockChangedIntegrationEvent(request.ToWarehouseId, request.VariantSku, to.QuantityAvailable, request.Reference));
@@ -268,6 +283,7 @@ public class GetStockQueryHandler : IRequestHandler<GetStockQuery, IReadOnlyList
 }
 
 public record GetWarehousesQuery(bool OnlyActive = true) : IRequest<IReadOnlyList<WarehouseDto>>;
+
 public class GetWarehousesQueryHandler : IRequestHandler<GetWarehousesQuery, IReadOnlyList<WarehouseDto>>
 {
     private readonly IHarnessDbContext _db;

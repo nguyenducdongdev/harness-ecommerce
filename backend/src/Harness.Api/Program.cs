@@ -1,15 +1,20 @@
 using System.Reflection;
 using FluentValidation;
 using Hangfire;
+using Hangfire.PostgreSql;
 using Harness.Api.Persistence;
 using Harness.BuildingBlocks.Application.Behaviors;
 using Harness.BuildingBlocks.Infrastructure;
 using Harness.BuildingBlocks.Presentation.Middleware;
 using Harness.Modules.Catalog;
 using Harness.Modules.Catalog.Application.Abstractions;
+using Harness.Modules.Catalog.Infrastructure;
 using Harness.Modules.Catalog.Infrastructure.Search;
+using Harness.Modules.Customer;
 using Harness.Modules.Inventory;
 using Harness.Modules.Integration.Infrastructure;
+using Harness.Modules.Payment;
+using Harness.Modules.Shipping;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -93,7 +98,7 @@ builder.Services.AddHangfireServer();
 
 // ===== Health checks =====
 builder.Services.AddHealthChecks()
-    .AddNpgsql(connectionString, name: "postgresql")
+    .AddNpgSql(connectionString, name: "postgresql")
     .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379", name: "redis");
 
 var app = builder.Build();

@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace Harness.BuildingBlocks.Infrastructure.Persistence;
 
 /// <summary>

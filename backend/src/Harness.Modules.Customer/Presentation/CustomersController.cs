@@ -2,6 +2,7 @@ using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Customer.Application;
 using Harness.Modules.Customer.Infrastructure;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Customer.Presentation;

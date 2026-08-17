@@ -16,9 +16,9 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(x => x.Address).HasMaxLength(500).IsRequired();
 
         builder.HasData(
-            new Warehouse { Id = 1, Code = "HCM-01", Name = "Showroom Quận 1", Address = "123 Nguyễn Huệ, Q1, TP.HCM", IsShowroom = true, Phone = "02812345678", CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
-            new Warehouse { Id = 2, Code = "HN-01", Name = "Showroom Cầu Giấy", Address = "45 Xuân Thủy, Cầu Giấy, Hà Nội", IsShowroom = true, Phone = "02412345678", CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
-            new Warehouse { Id = 3, Code = "KHO-TONG", Name = "Kho tổng Bình Dương", Address = "Khu CN VSIP, Bình Dương", IsShowroom = false, CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" });
+            new { Id = 1, Code = "HCM-01", Name = "Showroom Quận 1", Address = "123 Nguyễn Huệ, Q1, TP.HCM", IsShowroom = true, IsActive = true, Phone = "02812345678", CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
+            new { Id = 2, Code = "HN-01", Name = "Showroom Cầu Giấy", Address = "45 Xuân Thủy, Cầu Giấy, Hà Nội", IsShowroom = true, IsActive = true, Phone = "02412345678", CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
+            new { Id = 3, Code = "KHO-TONG", Name = "Kho tổng Bình Dương", Address = "Khu CN VSIP, Bình Dương", IsShowroom = false, IsActive = true, CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" });
     }
 }
 

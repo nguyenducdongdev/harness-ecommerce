@@ -13,11 +13,10 @@ public static class OutboxExtensions
     };
 
     /// <summary>Ghi integration event vào outbox — gọi TRƯỚC SaveChangesAsync, cùng transaction.</summary>
-    public static void AddToOutbox(this DbContext context, IntegrationEvent integrationEvent)
+    public static void AddToOutbox(this IHarnessDbContext context, IntegrationEvent integrationEvent)
     {
         context.Set<OutboxMessage>().Add(new OutboxMessage
         {
-            Id = Guid.NewGuid(),
             EventType = integrationEvent.EventType,
             Payload = JsonSerializer.Serialize(integrationEvent, integrationEvent.GetType(), JsonOptions),
             OccurredAt = integrationEvent.OccurredAt

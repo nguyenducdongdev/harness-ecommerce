@@ -25,11 +25,7 @@ public class Customer : AuditableEntity<Guid>
     public void AddAddress(string label, string receiverName, string phone, string fullAddress, bool isDefault = false)
     {
         if (isDefault) foreach (var a in _addresses) a.SetDefault(false);
-        _addresses.Add(new CustomerAddress
-        {
-            Id = Guid.NewGuid(), CustomerId = Id, Label = label,
-            ReceiverName = receiverName, Phone = phone, FullAddress = fullAddress, IsDefault = isDefault
-        });
+        _addresses.Add(CustomerAddress.Create(Id, label, receiverName, phone, fullAddress, isDefault));
     }
 }
 
@@ -43,4 +39,18 @@ public class CustomerAddress : Entity<Guid>
     public bool IsDefault { get; private set; }
 
     public void SetDefault(bool value) => IsDefault = value;
+
+    public static CustomerAddress Create(Guid customerId, string label, string receiverName, string phone, string fullAddress, bool isDefault)
+    {
+        return new CustomerAddress
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = customerId,
+            Label = label,
+            ReceiverName = receiverName,
+            Phone = phone,
+            FullAddress = fullAddress,
+            IsDefault = isDefault
+        };
+    }
 }

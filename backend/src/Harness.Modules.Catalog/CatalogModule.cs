@@ -15,7 +15,7 @@ public static class CatalogModule
 
         // Đăng ký 1 instance dùng chung cho cả 2 hợp đồng (IProductIndexer + IProductSearch)
         services.AddSingleton<IProductIndexer, ProductIndexer>();
-        services.AddSingleton<IProductSearch>(sp => sp.GetRequiredService<IProductIndexer>());
+        services.AddSingleton<IProductSearch>(sp => (IProductSearch)sp.GetRequiredService<IProductIndexer>());
 
         // Reindex toàn bộ cho SearchController + Hangfire recurring job
         services.AddScoped<ProductReindexService>();

@@ -1,6 +1,7 @@
 using Harness.BuildingBlocks.Application.Common;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
 using Harness.Modules.Catalog.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace Harness.Modules.Catalog.Infrastructure;
 
@@ -41,8 +42,19 @@ public static class CatalogSeed
 
         foreach (var product in products)
         {
-            AddSizeVariants(product);
             db.Set<Product>().Add(product);
+        }
+
+        await db.SaveChangesAsync();
+
+        foreach (var product in products)
+        {
+            AddSizeVariants(product);
+        }
+
+        foreach (var variant in products.SelectMany(p => p.Variants))
+        {
+            db.Set<ProductVariant>().Add(variant);
         }
 
         await db.SaveChangesAsync();

@@ -1,6 +1,7 @@
 using FluentValidation;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
 using Harness.Modules.Customer.Domain;
+using CustomerEntity = Harness.Modules.Customer.Domain.Customer;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,12 +27,12 @@ public class RegisterCustomerCommandHandler : IRequestHandler<RegisterCustomerCo
 
     public async Task<CustomerDto> Handle(RegisterCustomerCommand request, CancellationToken cancellationToken)
     {
-        var exists = await _db.Set<Customer>().AnyAsync(c => c.Phone == request.Phone, cancellationToken);
+        var exists = await _db.Set<CustomerEntity>().AnyAsync(c => c.Phone == request.Phone, cancellationToken);
         if (exists)
             throw new InvalidOperationException($"Số điện thoại {request.Phone} đã đăng ký.");
 
-        var customer = Customer.Register(request.FullName, request.Phone, request.Email);
-        _db.Set<Customer>().Add(customer);
+        var customer = CustomerEntity.Register(request.FullName, request.Phone, request.Email);
+        _db.Set<CustomerEntity>().Add(customer);
         await _db.SaveChangesAsync(cancellationToken);
         return new CustomerDto(customer.Id, customer.FullName, customer.Phone, customer.Email);
     }
@@ -49,7 +50,7 @@ public class GetCustomerByPhoneQueryHandler : IRequestHandler<GetCustomerByPhone
 
     public async Task<CustomerDto?> Handle(GetCustomerByPhoneQuery request, CancellationToken cancellationToken)
     {
-        var customer = await _db.Set<Customer>().AsNoTracking()
+        var customer = await _db.Set<CustomerEntity>().AsNoTracking()
             .FirstOrDefaultAsync(c => c.Phone == request.Phone, cancellationToken);
         return customer is null ? null : new CustomerDto(customer.Id, customer.FullName, customer.Phone, customer.Email);
     }

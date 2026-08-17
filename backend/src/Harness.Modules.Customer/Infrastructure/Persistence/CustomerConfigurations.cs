@@ -1,12 +1,13 @@
+using CustomerEntity = Harness.Modules.Customer.Domain.Customer;
 using Harness.Modules.Customer.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Harness.Modules.Customer.Infrastructure.Persistence;
 
-public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
+public class CustomerConfiguration : IEntityTypeConfiguration<CustomerEntity>
 {
-    public void Configure(EntityTypeBuilder<Customer> builder)
+    public void Configure(EntityTypeBuilder<CustomerEntity> builder)
     {
         builder.ToTable("customers", "customer");
         builder.HasKey(x => x.Id);

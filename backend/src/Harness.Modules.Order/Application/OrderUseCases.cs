@@ -2,6 +2,7 @@ using FluentValidation;
 using Harness.BuildingBlocks.Application.Common;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
 using Harness.Modules.Order.Domain;
+using OrderEntity = Harness.Modules.Order.Domain.Order;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,14 +51,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
 
     public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
-        var order = Order.Create(
+        var order = OrderEntity.Create(
             request.CustomerName, request.CustomerPhone, request.CustomerEmail,
             request.ShippingAddress, request.Note,
             request.DeliveryMethod, request.PaymentMethod,
             request.Items.Select(i => (i.ProductId, i.VariantSku, i.ProductName, i.UnitPrice, i.Quantity)),
             request.ShippingFee, request.DiscountAmount, request.WarehouseId);
 
-        _db.Set<Order>().Add(order);
+        _db.Set<OrderEntity>().Add(order);
         // Outbox: ERP tạo bút toán, DMS giữ chỗ tồn kho sau khi đơn được ghi nhận
         _db.AddToOutbox(new OrderCreatedIntegrationEvent(
             order.Id, order.OrderNumber, order.TotalAmount,
@@ -87,7 +88,7 @@ public class GetOrderQueryHandler : IRequestHandler<GetOrderQuery, OrderDto?>
 
     public async Task<OrderDto?> Handle(GetOrderQuery request, CancellationToken cancellationToken)
     {
-        var order = await _db.Set<Order>().AsNoTracking()
+        var order = await _db.Set<OrderEntity>().AsNoTracking()
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.OrderNumber == request.OrderNumber, cancellationToken);
         return order is null ? null : OrderMapper.ToDto(order);
@@ -105,7 +106,7 @@ public class GetOrdersByPhoneQueryHandler : IRequestHandler<GetOrdersByPhoneQuer
     public async Task<PagedResult<OrderDto>> Handle(GetOrdersByPhoneQuery request, CancellationToken cancellationToken)
     {
         var page = Math.Max(request.Page, 1);
-        var query = _db.Set<Order>().AsNoTracking()
+        var query = _db.Set<OrderEntity>().AsNoTracking()
             .Include(o => o.Items)
             .Where(o => o.CustomerPhone == request.Phone)
             .OrderByDescending(o => o.CreatedAt);
@@ -120,7 +121,7 @@ public class GetOrdersByPhoneQueryHandler : IRequestHandler<GetOrdersByPhoneQuer
 
 internal static class OrderMapper
 {
-    public static OrderDto ToDto(Order o) => new(
+    public static OrderDto ToDto(OrderEntity o) => new(
         o.Id, o.OrderNumber, o.Status, o.CustomerName, o.CustomerPhone,
         o.ItemsTotal, o.ShippingFee, o.DiscountAmount, o.TotalAmount,
         o.DeliveryMethod, o.PaymentMethod,

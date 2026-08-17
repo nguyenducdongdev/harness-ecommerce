@@ -2,6 +2,7 @@ using FluentValidation;
 using Harness.BuildingBlocks.Application.Common;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
 using Harness.Modules.Review.Domain;
+using ReviewEntity = Harness.Modules.Review.Domain.Review;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,10 +35,10 @@ public class SubmitReviewCommandHandler : IRequestHandler<SubmitReviewCommand, R
     public async Task<ReviewDto> Handle(SubmitReviewCommand request, CancellationToken cancellationToken)
     {
         // TODO Phase 2: đối chiếu CustomerPhone với đơn đã giao của sản phẩm này → VerifiedPurchase
-        var review = Review.Submit(request.ProductId, request.CustomerName, request.CustomerPhone,
+        var review = ReviewEntity.Submit(request.ProductId, request.CustomerName, request.CustomerPhone,
             request.Rating, request.Content, request.ImageUrls);
 
-        _db.Set<Review>().Add(review);
+        _db.Set<ReviewEntity>().Add(review);
         await _db.SaveChangesAsync(cancellationToken);
         return new ReviewDto(review.Id, review.ProductId, review.CustomerName,
             review.Rating, review.Content, review.VerifiedPurchase, review.Status.ToString());
@@ -59,7 +60,7 @@ public class GetProductReviewsQueryHandler : IRequestHandler<GetProductReviewsQu
     public async Task<PagedResult<ReviewDto>> Handle(GetProductReviewsQuery request, CancellationToken cancellationToken)
     {
         var page = Math.Max(request.Page, 1);
-        var query = _db.Set<Review>().AsNoTracking()
+        var query = _db.Set<ReviewEntity>().AsNoTracking()
             .Where(r => r.ProductId == request.ProductId && r.Status == ReviewStatus.Approved);
 
         var total = await query.LongCountAsync(cancellationToken);

@@ -2,6 +2,7 @@ using FluentValidation;
 using Harness.BuildingBlocks.Application;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
 using Harness.Modules.Customer.Domain;
+using CustomerEntity = Harness.Modules.Customer.Domain.Customer;
 using Harness.Modules.Customer.Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -67,21 +68,21 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, OtpSess
         var ok = await _otp.VerifyAsync(request.Phone, request.Code, cancellationToken);
         if (!ok)
         {
-            throw new ValidationException(new[]
+            throw new FluentValidation.ValidationException(new[]
             {
                 new FluentValidation.Results.ValidationFailure(
                     nameof(VerifyOtpCommand.Code), "Mã OTP không đúng hoặc đã hết hạn.")
             });
         }
 
-        var customer = await _db.Set<Customer>()
+        var customer = await _db.Set<CustomerEntity>()
             .FirstOrDefaultAsync(c => c.Phone == request.Phone, cancellationToken);
         var isNew = customer is null;
 
         if (customer is null)
         {
-            customer = Customer.Register(string.IsNullOrWhiteSpace(request.Name) ? request.Phone : request.Name!, request.Phone);
-            _db.Set<Customer>().Add(customer);
+            customer = CustomerEntity.Register(string.IsNullOrWhiteSpace(request.Name) ? request.Phone : request.Name!, request.Phone);
+            _db.Set<CustomerEntity>().Add(customer);
             await _db.SaveChangesAsync(cancellationToken);
         }
 

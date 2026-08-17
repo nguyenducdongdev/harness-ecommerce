@@ -29,7 +29,7 @@ public class ShippingCalculator
 
         // Phí theo cân tính (mỗi kg vượt 10kg cộng thêm)
         var extraKg = Math.Max(0, chargeableWeight - 10);
-        var extraFee = extraKg * baseFee * 0.02m; // 2% baseFee mỗi kg vượt
+        var extraFee = (decimal)extraKg * baseFee * 0.02m; // 2% baseFee mỗi kg vượt
 
         var totalFee = baseFee + extraFee;
 

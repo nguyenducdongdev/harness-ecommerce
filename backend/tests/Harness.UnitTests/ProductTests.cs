@@ -15,7 +15,7 @@ public class ProductTests
         var product = NewProduct();
 
         Assert.Equal("Sofa góc Test", product.Name);
-        Assert.Equal(price: 10_000_000, actual: product.Price);
+        Assert.Equal(expected: 10_000_000m, actual: product.Price);
         Assert.True(product.IsActive);
     }
 
