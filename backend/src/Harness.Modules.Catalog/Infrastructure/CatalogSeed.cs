@@ -31,6 +31,12 @@ public static class CatalogSeed
                 "Ghế ăn chân gỗ bech bọc nỉ mềm mại, kiểu dáng thanh lịch.", "Tân cổ điển", "Nỉ + gỗ bech"),
             CreateProduct("Sofa bed đa năng thông minh Flexi", 7, 1, 21_500_000, 18_900_000, 24,
                 "Sofa kéo dài thành giường, hộc chứa đồ bên dưới — tiết kiệm diện tích.", "Hiện đại", "Vải nhung + khung thép"),
+            CreateProduct("Bàn trà mặt đá Óc chó Sydney", 6, 2, 6_500_000, 5_900_000, 12,
+                "Bàn trà mặt đá nhân tạo, chân gỗ óc chó — điểm nhấn phòng khách.", "Hiện đại", "Đá nhân tạo + gỗ óc chó"),
+            CreateProduct("Tủ áo gỗ óc chó 3 cánh", 3, 4, 22_000_000, null, 36,
+                "Tủ áo 3 cánh gỗ óc chó tự nhiên, nhiều khoang cất đồ linh hoạt.", "Tân cổ điển", "Gỗ óc chó"),
+            CreateProduct("Bàn trang điểm thông minh Ava", 7, 1, 7_200_000, null, 12,
+                "Bàn trang điểm tích hợp đèn LED + gương thông minh.", "Hiện đại", "MDF + đèn LED"),
         };
 
         foreach (var product in products)
@@ -40,6 +46,10 @@ public static class CatalogSeed
         }
 
         await db.SaveChangesAsync();
+
+        // Combo phòng — dùng sản phẩm vừa seed (chỉ khi chưa có combo nào)
+        var slugToId = products.ToDictionary(p => p.Slug, p => p.Id);
+        await SeedCombosAsync(db, slugToId);
     }
 
     private static Product CreateProduct(
@@ -69,6 +79,9 @@ public static class CatalogSeed
                 : product.Name.Contains("Tủ bếp") ? new[] { (280, 60, 220), (320, 60, 220), (360, 60, 220) }
                 : product.Name.Contains("Bàn ăn") ? new[] { (140, 80, 75), (160, 80, 75), (180, 90, 75) }
                 : product.Name.Contains("Bàn làm việc") ? new[] { (120, 60, 75), (140, 70, 75), (160, 70, 75) }
+                : product.Name.Contains("Bàn trà") ? new[] { (90, 50, 45), (110, 60, 45) }
+                : product.Name.Contains("Bàn trang điểm") ? new[] { (90, 45, 140), (120, 50, 150) }
+                : product.Name.Contains("Tủ áo") ? new[] { (150, 60, 220), (180, 60, 220) }
                 : product.Name.Contains("Kệ TV") ? new[] { (160, 35, 40), (180, 35, 40), (200, 40, 40) }
                 : product.Name.Contains("Ghế ăn") ? new[] { (45, 52, 88) }
                 : product.Name.Contains("Sofa bed") ? new[] { (180, 95, 85), (220, 95, 85) }
@@ -78,5 +91,46 @@ public static class CatalogSeed
         foreach (var (w, d, h) in variants)
             product.AddVariant(ProductVariant.Create(
                 product.Id, $"{product.Sku}-{w}x{d}x{h}", $"{w}x{d}x{h}cm", w, d, h));
+    }
+
+    /// <summary>Seed combo phòng (sofa + bàn + kệ; giường + tủ + bàn trang điểm) từ sản phẩm đã seed.</summary>
+    private static async Task SeedCombosAsync(IHarnessDbContext db, IReadOnlyDictionary<string, int> productBySlug)
+    {
+        if (await db.Set<RoomCombo>().AnyAsync()) return;
+
+        var definitions = new[]
+        {
+            new
+            {
+                Name = "Combo Phòng khách hiện đại",
+                RoomType = RoomType.LivingRoom,
+                Description = "Sofa góc + bàn trà + kệ TV — không gian tiếp khách liền mạch, tiết kiệm.",
+                Items = new[] { ("sofa-goc-da-cong-nghiep-milano", 1), ("ban-tra-mat-da-oc-cho-sydney", 1), ("ke-tv-treo-tuong-thong-minh-smart-living", 1) }
+            },
+            new
+            {
+                Name = "Combo Phòng ngủ ấm cúng",
+                RoomType = RoomType.BedRoom,
+                Description = "Giường + tủ áo + bàn trang điểm cho phòng ngủ trọn vẹn.",
+                Items = new[] { ("giuong-ngu-go-oc-cho-queen", 1), ("tu-ao-go-oc-cho-3-canh", 1), ("ban-trang-diem-thong-minh-ava", 1) }
+            }
+        };
+
+        foreach (var def in definitions)
+        {
+            var resolved = def.Items
+                .Select(item => (id: productBySlug.GetValueOrDefault(item.Item1, 0), qty: item.Item2))
+                .Where(x => x.id > 0)
+                .ToList();
+            if (resolved.Count == 0) continue;
+
+            var combo = RoomCombo.Create(def.Name, SlugHelper.Generate(def.Name), def.RoomType, def.Description);
+            foreach (var (id, qty) in resolved)
+                combo.AddItem(id, qty);
+
+            db.Set<RoomCombo>().Add(combo);
+        }
+
+        await db.SaveChangesAsync();
     }
 }

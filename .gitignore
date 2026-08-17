@@ -50,3 +50,6 @@ docker/**/*.env
 *.pem
 *.key
 secrets/
+/.claude
+/.cursor
+/.trellis

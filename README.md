@@ -22,9 +22,9 @@ harness-ecommerce/
 
 | Module | Schema PostgreSQL | Trách nhiệm |
 |---|---|---|
-| Catalog | `catalog` | Sản phẩm, biến thể kích thước (rộng×sâu×cao), danh mục, thương hiệu |
+| Catalog | `catalog` | Sản phẩm, biến thể kích thước (rộng×sâu×cao), danh mục, thương hiệu, **combo phòng** |
 | Order | `orders` | Giỏ→đơn hàng, máy trạng thái 7 bước |
-| Inventory | `inventory` | Tồn kho theo kho/showroom, xuất nhập |
+| Inventory | `inventory` | **Tồn kho theo kho/showroom** (khả dụng, giữ chỗ, chuyển kho), xuất nhập |
 | Customer | `customer` | Khách hàng, địa chỉ |
 | Promotion | `promotion` | Voucher, flash sale |
 | Payment | `orders` | Giao dịch VNPay/MoMo/COD, webhook |
@@ -66,7 +66,7 @@ dotnet run --project src/Harness.Api
 # Health:   http://localhost:5080/health
 ```
 
-Lần đầu chạy ở chế độ Development, hệ thống tự migrate + seed 8 sản phẩm nội thất mẫu (kèm biến thể kích thước), 8 danh mục, 4 thương hiệu, 3 kho/showroom.
+Lần đầu chạy ở chế độ Development, hệ thống tự migrate + seed **11 sản phẩm nội thất mẫu** (kèm biến thể kích thước), **2 combo phòng**, 8 danh mục, 4 thương hiệu, 3 kho/showroom.
 
 ### 3. Website
 
@@ -129,7 +129,7 @@ Nginx config mẫu tại `docker/nginx/nginx.conf` (reverse proxy `/api` → bac
 
 ## Lộ trình
 
-- **Phase 1 (M0 ✓ + M1 ✓ + M2 backend ✓)**: Nền tảng — modular monolith, catalog (+ JSONB attributes, Elasticsearch indexer/tìm kiếm, upload ảnh MinIO/local), order + checkout (COD, VNPay sandbox), Customer OTP, đặt lịch lắp đặt/đo đạc, phí ship theo thể tích, web, admin, CI/CD
+- **Phase 1 (M0 ✓ + M1 ✓ + M2 backend ✓ + M3 backend ✓)**: Nền tảng — modular monolith, catalog (+ JSONB attributes, Elasticsearch indexer/tìm kiếm, upload ảnh MinIO/local, combo phòng), order + checkout (COD, VNPay sandbox), Customer OTP, đặt lịch lắp đặt/đo đạc, inventory theo showroom (reserve/release/transfer), phí ship theo thể tích, web, admin, CI/CD
 - **Phase 2**: Auth JWT + OTP (hoàn thiện), thanh toán VNPay/MoMo sandbox (frontend), quiz tư vấn nội thất, đánh giá
 - **Phase 3**: ERP (kế toán, công nợ), DMS (chuyển kho, đối soát), sản xuất (BOM)
 - **Phase 4**: Mobile app React Native, đồng bộ sàn TMĐT, AR, tách microservices

@@ -21,6 +21,26 @@ public class StocksController : ApiController
         var result = await Mediator.Send(command);
         return Ok(ApiResponse.Ok(result, "Đã cập nhật tồn kho."));
     }
+
+    /// <summary>Khai báo/nhập tồn kho khởi tạo cho (kho × SKU) — đưa khả dụng về đúng giá trị.</summary>
+    [HttpPost("set")]
+    public async Task<IActionResult> Set([FromBody] SetStockCommand command)
+        => Ok(ApiResponse.Ok(await Mediator.Send(command), "Đã khai báo tồn kho."));
+
+    /// <summary>Giữ chỗ tồn kho theo showroom khi có đơn (available → reserved).</summary>
+    [HttpPost("reserve")]
+    public async Task<IActionResult> Reserve([FromBody] ReserveStockCommand command)
+        => Ok(ApiResponse.Ok(await Mediator.Send(command), "Đã giữ chỗ tồn kho."));
+
+    /// <summary>Hoàn lại tồn kho giữ chỗ khi hủy đơn (reserved → available).</summary>
+    [HttpPost("release")]
+    public async Task<IActionResult> Release([FromBody] ReleaseStockCommand command)
+        => Ok(ApiResponse.Ok(await Mediator.Send(command), "Đã hoàn lại tồn kho giữ chỗ."));
+
+    /// <summary>Chuyển kho giữa showroom/kho (TransferOut kho nguồn + TransferIn kho đích trong 1 giao dịch).</summary>
+    [HttpPost("transfer")]
+    public async Task<IActionResult> Transfer([FromBody] TransferStockCommand command)
+        => Ok(ApiResponse<object>.Ok(await Mediator.Send(command), "Đã chuyển kho."));
 }
 
 public class WarehousesController : ApiController

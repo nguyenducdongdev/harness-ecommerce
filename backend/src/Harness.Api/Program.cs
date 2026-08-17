@@ -8,6 +8,7 @@ using Harness.BuildingBlocks.Presentation.Middleware;
 using Harness.Modules.Catalog;
 using Harness.Modules.Catalog.Application.Abstractions;
 using Harness.Modules.Catalog.Infrastructure.Search;
+using Harness.Modules.Inventory;
 using Harness.Modules.Integration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -53,6 +54,7 @@ builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddShippingModule(builder.Configuration);
 builder.Services.AddPaymentModule(builder.Configuration);
 builder.Services.AddCustomerModule(builder.Configuration);
+builder.Services.AddInventoryModule(builder.Configuration);
 
 // ===== MediatR (CQRS) + pipeline behaviors =====
 builder.Services.AddMediatR(cfg =>
