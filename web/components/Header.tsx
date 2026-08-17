@@ -30,6 +30,9 @@ export async function Header() {
           <Link href="/flash-sale" className="hidden text-sm font-medium text-red-600 hover:text-red-700 md:block">
             ⚡ Flash sale
           </Link>
+          <Link href="/membership" className="hidden text-sm text-neutral-600 hover:text-brand-600 md:block">
+            ⭐ Tích điểm
+          </Link>
           <Link href="/booking" className="hidden text-sm text-neutral-600 hover:text-brand-600 md:block">
             Đặt lịch
           </Link>

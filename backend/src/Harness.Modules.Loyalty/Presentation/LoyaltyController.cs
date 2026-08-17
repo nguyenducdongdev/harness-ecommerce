@@ -14,10 +14,15 @@ public class LoyaltyController : ApiController
     public async Task<IActionResult> Earn([FromBody] EarnPointsCommand command)
         => Ok(ApiResponse.Ok(await Mediator.Send(command)));
 
-    /// <summary>Đổi điểm lấy voucher/quà.</summary>
-    [HttpPost("redeem")]
-    public async Task<IActionResult> Redeem([FromBody] RedeemPointsCommand command)
-        => Ok(ApiResponse.Ok(await Mediator.Send(command)));
+    /// <summary>Đổi điểm lấy quà từ kho quà.</summary>
+    [HttpPost("redeem-reward")]
+    public async Task<IActionResult> RedeemReward([FromBody] RedeemRewardCommand command)
+        => Ok(ApiResponse<object>.Ok(await Mediator.Send(command), "Đã đổi quà thành công."));
+
+    /// <summary>Kho quà đang hoạt động.</summary>
+    [HttpGet("rewards")]
+    public async Task<IActionResult> GetRewards()
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetRewardsQuery())));
 
     /// <summary>Xem điểm & hạng của khách.</summary>
     [HttpGet("{customerId:guid}")]
@@ -28,4 +33,10 @@ public class LoyaltyController : ApiController
             ? NotFound(ApiResponse.Fail("Khách hàng chưa có tài khoản tích điểm."))
             : Ok(ApiResponse.Ok(account));
     }
+
+    /// <summary>Lịch sử cộng/trừ điểm của khách.</summary>
+    [HttpGet("{customerId:guid}/transactions")]
+    public async Task<IActionResult> GetTransactions(Guid customerId)
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetPointTransactionsQuery(customerId))));
 }
+

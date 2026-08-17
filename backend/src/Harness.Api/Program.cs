@@ -121,6 +121,7 @@ if (app.Environment.IsDevelopment())
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await db.Database.MigrateAsync();
         await CatalogSeed.SeedAsync(db);
+        await LoyaltySeed.SeedAsync(db);
 
         // Khởi tạo index Elasticsearch (best-effort — không ném lỗi nếu ES chưa sẵn sàng)
         var indexer = scope.ServiceProvider.GetRequiredService<IProductIndexer>();

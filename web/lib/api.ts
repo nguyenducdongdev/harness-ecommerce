@@ -147,3 +147,60 @@ export const promotionApi = {
     return fetchApi<ShippingFeeResult>(`/api/v1/shipping/quotes/carriers/${carrier}/quote?${qs}`);
   },
 };
+
+// ===== Loyalty: tích điểm / đổi quà =====
+export interface CustomerDto {
+  id: string;
+  fullName: string;
+  phone: string;
+  email: string | null;
+}
+
+export interface LoyaltyDto {
+  customerId: string;
+  points: number;
+  tier: string;
+  lifetimeSpend: number;
+}
+
+export interface RewardDto {
+  id: number;
+  name: string;
+  description: string | null;
+  pointsCost: number;
+  value: number;
+}
+
+export interface LoyaltyTransactionDto {
+  id: string;
+  pointsDelta: number;
+  type: string;
+  reference: string;
+  note: string | null;
+  createdAt: string;
+}
+
+async function fetchApiWithAuth<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...init?.headers },
+    ...init,
+  });
+  const body = (await res.json()) as ApiResponse<T>;
+  if (!res.ok || !body.success) {
+    throw new Error(body.message || `API lỗi ${res.status}`);
+  }
+  return body.data;
+}
+
+export const loyaltyApi = {
+  me: (token: string) => fetchApiWithAuth<CustomerDto>("/api/v1/customers/me", token),
+  get: (customerId: string) => fetchApi<LoyaltyDto>(`/api/v1/loyalty/${customerId}`),
+  rewards: () => fetchApi<RewardDto[]>("/api/v1/loyalty/rewards"),
+  transactions: (customerId: string) =>
+    fetchApi<LoyaltyTransactionDto[]>(`/api/v1/loyalty/${customerId}/transactions`),
+  redeem: (customerId: string, rewardId: number) =>
+    fetchApi<LoyaltyDto>("/api/v1/loyalty/redeem-reward", {
+      method: "POST",
+      body: JSON.stringify({ customerId, rewardId }),
+    }),
+};

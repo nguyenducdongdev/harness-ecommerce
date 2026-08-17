@@ -115,6 +115,44 @@ public class LoyaltyTests
         var account = LoyaltyAccount.Open(Guid.NewGuid());
         account.EarnFromOrder(1_000_000); // 100 điểm
 
-        Assert.Throws<InvalidOperationException>(() => account.Redeem(200));
+        Assert.Throws<InvalidOperationException>(() => account.Redeem(200, "test"));
     }
+
+    [Fact]
+    public void RedeemReward_DeductsPointsAndRecordsTransaction()
+    {
+        var account = LoyaltyAccount.Open(Guid.NewGuid());
+        account.EarnFromOrder(5_000_000); // 500 điểm
+        var reward = Reward.Create("Voucher 300.000đ", 300, 300_000);
+
+        account.RedeemReward(reward);
+
+        Assert.Equal(200, account.Points);
+        Assert.Contains(account.Transactions, t => t.PointsDelta == -300 && t.Reference.Contains("Voucher"));
+    }
+
+    [Fact]
+    public void RedeemReward_NotEnoughPoints_Throws()
+    {
+        var account = LoyaltyAccount.Open(Guid.NewGuid());
+        account.EarnFromOrder(1_000_000); // 100 điểm
+        var reward = Reward.Create("Voucher 300.000đ", 300, 300_000);
+
+        Assert.Throws<InvalidOperationException>(() => account.RedeemReward(reward));
+    }
+
+    [Fact]
+    public void RedeemReward_InactiveReward_Throws()
+    {
+        var account = LoyaltyAccount.Open(Guid.NewGuid());
+        account.EarnFromOrder(5_000_000);
+        var reward = Reward.Create("Voucher", 100, 100_000);
+        reward.Deactivate();
+
+        Assert.Throws<InvalidOperationException>(() => account.RedeemReward(reward));
+    }
+
+    [Fact]
+    public void Reward_Create_InvalidPoints_Throws()
+        => Assert.Throws<ArgumentException>(() => Reward.Create("Quà", 0, 100_000));
 }
