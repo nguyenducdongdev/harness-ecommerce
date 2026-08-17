@@ -27,6 +27,7 @@ public class FlashSaleConfiguration : IEntityTypeConfiguration<FlashSale>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.HasIndex(x => new { x.StartAt, x.EndAt });
+        builder.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.FlashSaleId);
         builder.Ignore(x => x.DomainEvents);
     }
 }

@@ -60,18 +60,76 @@ public class Voucher : AuditableEntity<int>
 /// <summary>Flash sale: sản phẩm giá ưu đãi giới hạn suất trong khung giờ.</summary>
 public class FlashSale : AuditableEntity<int>
 {
-    public string Name { get; set; } = default!;
-    public DateTimeOffset StartAt { get; set; }
-    public DateTimeOffset EndAt { get; set; }
-    public bool IsActive { get; set; } = true;
+    public string Name { get; private set; } = default!;
+    public DateTimeOffset StartAt { get; private set; }
+    public DateTimeOffset EndAt { get; private set; }
+    public bool IsActive { get; private set; } = true;
+
+    private readonly List<FlashSaleItem> _items = new();
+    public IReadOnlyCollection<FlashSaleItem> Items => _items.AsReadOnly();
+
+    private FlashSale() { } // EF
+
+    public static FlashSale Create(string name, DateTimeOffset startAt, DateTimeOffset endAt)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Tên flash sale không được để trống.", nameof(name));
+        if (endAt <= startAt) throw new ArgumentException("Thời gian kết thúc phải sau thời gian bắt đầu.", nameof(endAt));
+
+        return new FlashSale
+        {
+            Name = name.Trim(),
+            StartAt = startAt,
+            EndAt = endAt,
+            IsActive = true
+        };
+    }
+
+    public bool IsActiveNow(DateTimeOffset now) => IsActive && now >= StartAt && now <= EndAt;
+
+    public void Deactivate() => IsActive = false;
+
+    public FlashSaleItem AddItem(int productId, decimal salePrice, int quantityLimit)
+    {
+        if (productId <= 0) throw new ArgumentException("ProductId phải lớn hơn 0.", nameof(productId));
+        if (salePrice <= 0) throw new ArgumentException("Giá flash sale phải lớn hơn 0.", nameof(salePrice));
+        if (quantityLimit <= 0) throw new ArgumentException("Số lượng giới hạn phải lớn hơn 0.", nameof(quantityLimit));
+        if (_items.Any(i => i.ProductId == productId))
+            throw new InvalidOperationException($"Sản phẩm {productId} đã có trong flash sale này.");
+
+        var item = FlashSaleItem.Create(Id, productId, salePrice, quantityLimit);
+        _items.Add(item);
+        return item;
+    }
 }
 
 public class FlashSaleItem : Entity<int>
 {
-    public int FlashSaleId { get; set; }
-    public int ProductId { get; set; }
-    public decimal SalePrice { get; set; }
-    public int QuantityLimit { get; set; }
-    public int QuantitySold { get; set; }
+    public int FlashSaleId { get; private set; }
+    public int ProductId { get; private set; }
+    public decimal SalePrice { get; private set; }
+    public int QuantityLimit { get; private set; }
+    public int QuantitySold { get; private set; }
     public bool IsSoldOut => QuantitySold >= QuantityLimit;
+
+    private FlashSaleItem() { } // EF
+
+    public static FlashSaleItem Create(int flashSaleId, int productId, decimal salePrice, int quantityLimit)
+    {
+        return new FlashSaleItem
+        {
+            FlashSaleId = flashSaleId,
+            ProductId = productId,
+            SalePrice = salePrice,
+            QuantityLimit = quantityLimit,
+            QuantitySold = 0
+        };
+    }
+
+    public void IncreaseSold(int quantity)
+    {
+        if (quantity <= 0) throw new ArgumentException("Số lượng bán phải lớn hơn 0.", nameof(quantity));
+        if (QuantitySold + quantity > QuantityLimit)
+            throw new InvalidOperationException("Vượt quá số lượng flash sale cho phép.");
+        QuantitySold += quantity;
+    }
 }

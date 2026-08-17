@@ -1,5 +1,6 @@
 using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Shipping.Application;
+using Harness.Modules.Shipping.Application.Providers;
 using Harness.Modules.Shipping.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -32,6 +33,23 @@ public class ShippingQuotesController : ApiController
 
         var quote = calculator.Calculate(widthCm, depthCm, heightCm, weightKg, zone);
         return Ok(ApiResponse.Ok(quote));
+
+    }
+
+    /// <summary>Lấy phí vận chuyển từ nhà vận chuyển GHN/GHTK sandbox (hàng cồng kềnh).</summary>
+    [HttpGet("carriers/{carrier}/quote")]
+    [ProducesResponseType(typeof(ApiResponse<ShippingFeeResult>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCarrierQuote(
+        Carrier carrier,
+        [FromServices] IEnumerable<IShippingProvider> providers,
+        [FromQuery] ShippingFeeRequest request)
+    {
+        var provider = providers.FirstOrDefault(p => p.Carrier == carrier);
+        if (provider is null)
+            return BadRequest(ApiResponse.Fail("Nhà vận chuyển không hợp lệ."));
+
+        var result = await provider.CalculateAsync(request);
+        return Ok(ApiResponse.Ok(result));
     }
 }
 
