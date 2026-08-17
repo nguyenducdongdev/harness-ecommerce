@@ -51,6 +51,8 @@ builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration);
 // ===== Khởi tạo module (DI riêng của từng module) =====
 builder.Services.AddCatalogModule(builder.Configuration);
 builder.Services.AddShippingModule(builder.Configuration);
+builder.Services.AddPaymentModule(builder.Configuration);
+builder.Services.AddCustomerModule(builder.Configuration);
 
 // ===== MediatR (CQRS) + pipeline behaviors =====
 builder.Services.AddMediatR(cfg =>

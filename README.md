@@ -129,8 +129,8 @@ Nginx config mẫu tại `docker/nginx/nginx.conf` (reverse proxy `/api` → bac
 
 ## Lộ trình
 
-- **Phase 1 (M0 ✓ + M1 ✓)**: Nền tảng — modular monolith, catalog (+ JSONB attributes, Elasticsearch indexer/tìm kiếm, upload ảnh MinIO/local), order, inventory, phí ship theo thể tích, web, admin, CI/CD
-- **Phase 2**: Auth JWT + OTP, thanh toán VNPay/MoMo sandbox, quiz tư vấn nội thất, đánh giá
+- **Phase 1 (M0 ✓ + M1 ✓ + M2 backend ✓)**: Nền tảng — modular monolith, catalog (+ JSONB attributes, Elasticsearch indexer/tìm kiếm, upload ảnh MinIO/local), order + checkout (COD, VNPay sandbox), Customer OTP, đặt lịch lắp đặt/đo đạc, phí ship theo thể tích, web, admin, CI/CD
+- **Phase 2**: Auth JWT + OTP (hoàn thiện), thanh toán VNPay/MoMo sandbox (frontend), quiz tư vấn nội thất, đánh giá
 - **Phase 3**: ERP (kế toán, công nợ), DMS (chuyển kho, đối soát), sản xuất (BOM)
 - **Phase 4**: Mobile app React Native, đồng bộ sàn TMĐT, AR, tách microservices
 
