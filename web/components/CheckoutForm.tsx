@@ -21,6 +21,16 @@ const PAYMENT_OPTIONS = [
   { value: "MoMo", label: "Ví MoMo" },
 ];
 
+interface CreatedOrder {
+  id: string;
+  orderNumber: string;
+  totalAmount: number;
+}
+
+interface VnPayInit {
+  paymentUrl: string;
+}
+
 export function CheckoutForm({ totalAmount }: Props) {
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
@@ -33,6 +43,28 @@ export function CheckoutForm({ totalAmount }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
+
+  async function redirectToVnPay(order: CreatedOrder, clientIp: string) {
+    // Cất mã đơn để auto-tra cứu khi VNPay đưa khách về /track
+    sessionStorage.setItem("harness-last-order", order.orderNumber);
+
+    const res = await fetch("/api/v1/payments/vnpay/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: order.id,
+        amount: order.totalAmount,
+        orderInfo: `Thanh toan don ${order.orderNumber}`,
+        clientIp,
+      }),
+    });
+    const body = await res.json();
+    if (!res.ok || !body.success) {
+      throw new Error(body.message || "Không tạo được URL thanh toán VNPay.");
+    }
+    const data = body.data as VnPayInit;
+    window.location.href = data.paymentUrl;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,14 +95,28 @@ export function CheckoutForm({ totalAmount }: Props) {
         }),
       });
       const body = await res.json();
+
       if (!res.ok || !body.success) {
         setError(body.message || "Đặt hàng thất bại, vui lòng thử lại.");
         return;
       }
-      setOrderNumber(body.data.orderNumber);
+
+      const order = body.data as CreatedOrder;
       clear();
-    } catch {
-      setError("Không kết nối được hệ thống. Backend đã chạy chưa?");
+
+      // Nếu khách chọn VNPay → chuyển sang cổng thanh toán (quay về /track sau khi xong)
+      if (payment === "VnPay") {
+        setError("");
+        await redirectToVnPay(order, "127.0.0.1");
+        return;
+      }
+
+      setOrderNumber(order.orderNumber);
+      sessionStorage.setItem("harness-last-order", order.orderNumber);
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message ? err.message : "Không kết nối được hệ thống. Backend đã chạy chưa?",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -134,6 +180,12 @@ export function CheckoutForm({ totalAmount }: Props) {
         ))}
       </select>
 
+      {payment === "VnPay" && (
+        <p className="rounded-lg bg-brand-50 p-3 text-xs text-brand-700">
+          Bạn sẽ được chuyển sang cổng thanh toán VNPay (sandbox) để hoàn tất thanh toán.
+        </p>
+      )}
+
       <div className="flex justify-between border-t pt-4 text-lg font-bold">
         <span>Tổng cộng</span>
         <span className="text-brand-600">{formatVnd(totalAmount)}</span>
@@ -142,7 +194,7 @@ export function CheckoutForm({ totalAmount }: Props) {
       {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>}
 
       <button type="submit" disabled={submitting} className="btn-primary w-full text-base">
-        {submitting ? "Đang xử lý..." : "Đặt hàng"}
+        {submitting ? "Đang xử lý..." : payment === "VnPay" ? "Đặt hàng & thanh toán" : "Đặt hàng"}
       </button>
       <p className="text-center text-xs text-neutral-400">
         Bằng việc đặt hàng, bạn đồng ý với chính sách đổi trả và bảo hành của Harness.

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Category } from "@/lib/api";
 import { fetchFromServer } from "@/lib/api";
 import { CartBadge } from "./CartBadge";
+import { HeaderUserMenu } from "./HeaderUserMenu";
 
 export async function Header() {
   const categories = (await fetchFromServer<Category[]>("/api/v1/categories")) ?? [];
@@ -26,9 +27,13 @@ export async function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <Link href="/booking" className="hidden text-sm text-neutral-600 hover:text-brand-600 md:block">
+            Đặt lịch
+          </Link>
           <Link href="/track" className="hidden text-sm text-neutral-600 hover:text-brand-600 md:block">
             Tra cứu đơn
           </Link>
+          <HeaderUserMenu />
           <CartBadge />
         </div>
       </div>

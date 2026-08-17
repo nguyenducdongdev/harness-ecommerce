@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatVnd } from "@/lib/format";
 
 interface OrderResult {
@@ -26,14 +26,31 @@ export default function TrackPage() {
   const [order, setOrder] = useState<OrderResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"success" | "failed" | null>(null);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("payment");
+    if (status === "success" || status === "failed") {
+      setPaymentStatus(status);
+      // Auto-tra cứu đơn vừa thanh toán (VNPay đưa về /track)
+      const pending = sessionStorage.getItem("harness-last-order");
+      if (pending) {
+        setOrderNumber(pending);
+        sessionStorage.removeItem("harness-last-order");
+        void searchOrder(pending);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function searchOrder(num?: string) {
+    const target = (num ?? orderNumber).trim();
     setError("");
     setOrder(null);
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/orders/${encodeURIComponent(orderNumber.trim())}`);
+      const res = await fetch(`/api/v1/orders/${encodeURIComponent(target)}`);
       const body = await res.json();
       if (!res.ok || !body.success) {
         setError(body.message || "Không tìm thấy đơn hàng.");
@@ -47,10 +64,26 @@ export default function TrackPage() {
     }
   }
 
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    await searchOrder();
+  }
+
   return (
     <div className="container-page max-w-2xl py-12">
       <h1 className="text-2xl font-bold">Tra cứu đơn hàng</h1>
       <p className="mt-2 text-neutral-500">Nhập mã đơn (VD: HD260816-ABC123) để xem trạng thái.</p>
+
+      {paymentStatus === "success" && (
+        <p className="mt-4 rounded-lg bg-green-50 p-4 text-green-700">
+          ✅ Thanh toán VNPay thành công. Trạng thái đơn hàng của bạn dưới đây.
+        </p>
+      )}
+      {paymentStatus === "failed" && (
+        <p className="mt-4 rounded-lg bg-red-50 p-4 text-red-600">
+          ⚠️ Thanh toán VNPay chưa hoàn tất. Đơn hàng đã được lưu, bạn có thể thanh toán lại hoặc đặt hàng mới.
+        </p>
+      )}
 
       <form onSubmit={handleSearch} className="mt-6 flex gap-2">
         <input
