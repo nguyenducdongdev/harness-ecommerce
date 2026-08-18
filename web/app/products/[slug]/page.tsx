@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AddToCartPanel } from "@/components/AddToCartPanel";
 import ShippingEstimator from "@/components/ShippingEstimator";
+import { ProductReviews } from "@/components/ProductReviews";
 import { fetchFromServer, type Product } from "@/lib/api";
 import { formatVnd } from "@/lib/format";
 
@@ -94,6 +95,8 @@ export default async function ProductDetailPage({ params }: Props) {
           <p className="whitespace-pre-line leading-relaxed text-neutral-600">{product.description}</p>
         </section>
       )}
+
+      <ProductReviews productId={product.id} productName={product.name} />
     </div>
   );
 }

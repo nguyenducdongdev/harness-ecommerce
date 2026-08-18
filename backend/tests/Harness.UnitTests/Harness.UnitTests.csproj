@@ -8,6 +8,7 @@
     <ProjectReference Include="..\..\src\Harness.Modules.Inventory\Harness.Modules.Inventory.csproj" />
     <ProjectReference Include="..\..\src\Harness.Modules.Payment\Harness.Modules.Payment.csproj" />
     <ProjectReference Include="..\..\src\Harness.Modules.Customer\Harness.Modules.Customer.csproj" />
+    <ProjectReference Include="..\..\src\Harness.Modules.Review\Harness.Modules.Review.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

@@ -47,3 +47,62 @@ public class GetPageBySlugQueryHandler : IRequestHandler<GetPageBySlugQuery, Pag
 }
 
 public record PageDto(int Id, string Title, string Slug, string HtmlContent, string? MetaTitle, string? MetaDescription);
+
+// ===== Quản trị banner =====
+
+public record CreateBannerCommand(string Title, string ImageUrl, string? LinkUrl, string Position, int SortOrder, DateTimeOffset? StartAt = null, DateTimeOffset? EndAt = null) : IRequest<int>;
+
+public class CreateBannerCommandHandler : IRequestHandler<CreateBannerCommand, int>
+{
+    private readonly IHarnessDbContext _db;
+    public CreateBannerCommandHandler(IHarnessDbContext db) => _db = db;
+
+    public async Task<int> Handle(CreateBannerCommand request, CancellationToken cancellationToken)
+    {
+        var banner = new Banner
+        {
+            Title = request.Title.Trim(),
+            ImageUrl = request.ImageUrl,
+            LinkUrl = request.LinkUrl,
+            Position = request.Position,
+            SortOrder = request.SortOrder,
+            IsActive = true,
+            StartAt = request.StartAt,
+            EndAt = request.EndAt
+        };
+        _db.Set<Banner>().Add(banner);
+        await _db.SaveChangesAsync(cancellationToken);
+        return banner.Id;
+    }
+}
+
+public record DeactivateBannerCommand(int Id) : IRequest<bool>;
+
+public class DeactivateBannerCommandHandler : IRequestHandler<DeactivateBannerCommand, bool>
+{
+    private readonly IHarnessDbContext _db;
+    public DeactivateBannerCommandHandler(IHarnessDbContext db) => _db = db;
+
+    public async Task<bool> Handle(DeactivateBannerCommand request, CancellationToken cancellationToken)
+    {
+        var banner = await _db.Set<Banner>().FindAsync(new object[] { request.Id }, cancellationToken)
+            ?? throw new KeyNotFoundException($"Không tìm thấy banner #{request.Id}.");
+        banner.IsActive = false;
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
+
+public record GetAllBannersQuery : IRequest<IReadOnlyList<BannerDto>>;
+
+public class GetAllBannersQueryHandler : IRequestHandler<GetAllBannersQuery, IReadOnlyList<BannerDto>>
+{
+    private readonly IHarnessDbContext _db;
+    public GetAllBannersQueryHandler(IHarnessDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<BannerDto>> Handle(GetAllBannersQuery request, CancellationToken cancellationToken)
+        => await _db.Set<Banner>().AsNoTracking()
+            .OrderBy(b => b.Position).ThenBy(b => b.SortOrder)
+            .Select(b => new BannerDto(b.Id, b.Title, b.ImageUrl, b.LinkUrl, b.Position, b.SortOrder))
+            .ToListAsync(cancellationToken);
+}

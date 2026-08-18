@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { fetchFromServer, type Category, type PagedResult, type Product } from "@/lib/api";
+import { fetchFromServer, type BannerDto, type Category, type PagedResult, type Product } from "@/lib/api";
 import { FlashSaleSection } from "@/components/FlashSaleSection";
 
 export const revalidate = 120; // ISR: regenerate mỗi 2 phút
 
 export default async function HomePage() {
-  const [featured, categories] = await Promise.all([
+  const [featured, categories, banners] = await Promise.all([
     fetchFromServer<Product[]>("/api/v1/products/featured?take=8"),
     fetchFromServer<Category[]>("/api/v1/categories"),
+    fetchFromServer<BannerDto[]>("/api/v1/banners?position=home-mid"),
   ]);
 
   return (
@@ -73,6 +74,22 @@ export default async function HomePage() {
 
       {/* Flash sale đang diễn ra */}
       <FlashSaleSection compact />
+
+      {/* Banner CMS */}
+      {banners && banners.length > 0 && (
+        <section className="grid gap-4 md:grid-cols-3">
+          {banners.map((b) => (
+            <Link
+              key={b.id}
+              href={b.linkUrl || "/products"}
+              className="rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200 p-6 transition hover:border hover:border-brand-300"
+            >
+              <p className="text-lg font-bold">{b.title}</p>
+              <p className="mt-1 text-sm text-neutral-500">Tìm hiểu ngay →</p>
+            </Link>
+          ))}
+        </section>
+      )}
 
       {/* Cam kết */}
       <section className="grid gap-4 md:grid-cols-4">

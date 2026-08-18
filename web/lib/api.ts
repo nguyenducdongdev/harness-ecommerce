@@ -204,3 +204,58 @@ export const loyaltyApi = {
       body: JSON.stringify({ customerId, rewardId }),
     }),
 };
+
+// ===== Cms: banner / nội dung =====
+export interface BannerDto {
+  id: number;
+  title: string;
+  imageUrl: string;
+  linkUrl: string | null;
+  position: string;
+  sortOrder: number;
+}
+
+export const cmsApi = {
+  activeBanners: (position: string = "home-hero") =>
+    fetchApi<BannerDto[]>(`/api/v1/banners?position=${position}`),
+};
+
+// ===== Review: đánh giá sản phẩm =====
+export interface ReviewDto {
+  id: string;
+  productId: number;
+  customerName: string;
+  rating: number;
+  content: string;
+  verifiedPurchase: boolean;
+  status: string;
+}
+
+export interface ProductRatingDto {
+  productId: number;
+  averageRating: number;
+  totalCount: number;
+  ratings: { star: number; count: number }[];
+}
+
+export interface PagedReviewResult {
+  items: ReviewDto[];
+}
+
+export const reviewApi = {
+  getByProduct: (productId: number, page = 1) =>
+    fetchApi<PagedReviewResult>(`/api/v1/reviews/product/${productId}?page=${page}`),
+  rating: (productId: number) =>
+    fetchApi<ProductRatingDto>(`/api/v1/reviews/product/${productId}/rating`),
+  submit: (input: {
+    productId: number;
+    customerName: string;
+    customerPhone: string;
+    rating: number;
+    content: string;
+  }) =>
+    fetchApi<ReviewDto>("/api/v1/reviews", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+};

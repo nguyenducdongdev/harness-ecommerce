@@ -13,6 +13,24 @@ public class BannersController : ApiController
     [HttpGet]
     public async Task<IActionResult> GetActive([FromQuery] string position = "home-hero")
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetActiveBannersQuery(position))));
+
+    /// <summary>Tất cả banner (admin).</summary>
+    [HttpGet("admin")]
+    public async Task<IActionResult> GetAll()
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetAllBannersQuery())));
+
+    /// <summary>Tạo banner mới (admin).</summary>
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateBannerCommand command)
+    {
+        var id = await Mediator.Send(command);
+        return Ok(ApiResponse<object>.Ok(new { id }, "Đã tạo banner."));
+    }
+
+    /// <summary>Ẩn banner (admin).</summary>
+    [HttpPut("{id:int}/deactivate")]
+    public async Task<IActionResult> Deactivate(int id)
+        => Ok(ApiResponse.Ok(await Mediator.Send(new DeactivateBannerCommand(id)), "Đã ẩn banner."));
 }
 
 public class PagesController : ApiController

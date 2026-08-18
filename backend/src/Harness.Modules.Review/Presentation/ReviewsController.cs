@@ -21,4 +21,26 @@ public class ReviewsController : ApiController
     [HttpGet("product/{productId:int}")]
     public async Task<IActionResult> GetByProduct(int productId, [FromQuery] int page = 1)
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetProductReviewsQuery(productId, page))));
+
+    /// <summary>Tổng hợp điểm đánh giá sản phẩm.</summary>
+    [HttpGet("product/{productId:int}/rating")]
+    public async Task<IActionResult> GetRating(int productId)
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetProductRatingQuery(productId))));
+
+    // ===== Kiểm duyệt (admin) =====
+
+    /// <summary>Hàng chờ đánh giá chưa duyệt.</summary>
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPending([FromQuery] int page = 1)
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetReviewModerationQueueQuery(page))));
+
+    /// <summary>Duyệt đánh giá.</summary>
+    [HttpPut("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id)
+        => Ok(ApiResponse<object>.Ok(await Mediator.Send(new ApproveReviewCommand(id)), "Đã duyệt đánh giá."));
+
+    /// <summary>Từ chối đánh giá.</summary>
+    [HttpPut("{id:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid id)
+        => Ok(ApiResponse<object>.Ok(await Mediator.Send(new RejectReviewCommand(id)), "Đã từ chối đánh giá."));
 }
