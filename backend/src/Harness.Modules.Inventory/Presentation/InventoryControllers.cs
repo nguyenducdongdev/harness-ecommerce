@@ -1,6 +1,7 @@
 using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Inventory.Application;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Inventory.Presentation;
@@ -16,6 +17,7 @@ public class StocksController : ApiController
 
     /// <summary>Điều chỉnh tồn kho (admin/nhân viên kho).</summary>
     [HttpPost("adjust")]
+    [Authorize(Roles = "Admin,SuperAdmin,Warehouse")]
     public async Task<IActionResult> Adjust([FromBody] AdjustStockCommand command)
     {
         var result = await Mediator.Send(command);
@@ -24,21 +26,25 @@ public class StocksController : ApiController
 
     /// <summary>Khai báo/nhập tồn kho khởi tạo cho (kho × SKU) — đưa khả dụng về đúng giá trị.</summary>
     [HttpPost("set")]
+    [Authorize(Roles = "Admin,SuperAdmin,Warehouse")]
     public async Task<IActionResult> Set([FromBody] SetStockCommand command)
         => Ok(ApiResponse.Ok(await Mediator.Send(command), "Đã khai báo tồn kho."));
 
     /// <summary>Giữ chỗ tồn kho theo showroom khi có đơn (available → reserved).</summary>
     [HttpPost("reserve")]
+    [Authorize(Roles = "Admin,SuperAdmin,Warehouse")]
     public async Task<IActionResult> Reserve([FromBody] ReserveStockCommand command)
         => Ok(ApiResponse.Ok(await Mediator.Send(command), "Đã giữ chỗ tồn kho."));
 
     /// <summary>Hoàn lại tồn kho giữ chỗ khi hủy đơn (reserved → available).</summary>
     [HttpPost("release")]
+    [Authorize(Roles = "Admin,SuperAdmin,Warehouse")]
     public async Task<IActionResult> Release([FromBody] ReleaseStockCommand command)
         => Ok(ApiResponse.Ok(await Mediator.Send(command), "Đã hoàn lại tồn kho giữ chỗ."));
 
     /// <summary>Chuyển kho giữa showroom/kho (TransferOut kho nguồn + TransferIn kho đích trong 1 giao dịch).</summary>
     [HttpPost("transfer")]
+    [Authorize(Roles = "Admin,SuperAdmin,Warehouse")]
     public async Task<IActionResult> Transfer([FromBody] TransferStockCommand command)
         => Ok(ApiResponse<object>.Ok(await Mediator.Send(command), "Đã chuyển kho."));
 }

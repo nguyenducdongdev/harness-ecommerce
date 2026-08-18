@@ -1,6 +1,7 @@
 using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Promotion.Application;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,6 +14,7 @@ public class FlashSalesController : ApiController
 
     /// <summary>Tạo flash sale mới (admin).</summary>
     [HttpPost]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Create([FromBody] CreateFlashSaleCommand command)
     {
@@ -22,6 +24,7 @@ public class FlashSalesController : ApiController
 
     /// <summary>Thêm sản phẩm vào flash sale (admin).</summary>
     [HttpPost("{flashSaleId:int}/items")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
     public async Task<IActionResult> AddItem(int flashSaleId, [FromBody] AddFlashSaleItemRequest request)
     {

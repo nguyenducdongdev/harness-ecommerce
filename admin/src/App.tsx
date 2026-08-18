@@ -10,7 +10,7 @@ import {
   ShoppingCartOutlined,
   StarOutlined,
 } from "@ant-design/icons";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, Typography } from "antd";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
@@ -23,28 +23,71 @@ import Login from "./pages/Login";
 
 const { Header, Sider, Content } = Layout;
 
-// Auth stub — Phase 2 thay bằng JWT từ API + refresh token
+// Auth: JWT + roles từ login thật (POST /api/v1/auth/admin/login)
+interface AdminProfile {
+  username: string;
+  displayName: string;
+  roles: string[];
+}
+
+function readProfile(): AdminProfile | null {
+  try {
+    const raw = localStorage.getItem("harness-admin-profile");
+    return raw ? (JSON.parse(raw) as AdminProfile) : null;
+  } catch {
+    return null;
+  }
+}
+
 function useAuth() {
   const [token, setToken] = useState<string | null>(localStorage.getItem("harness-admin-token"));
+  const [profile, setProfile] = useState<AdminProfile | null>(readProfile());
   const login = (t: string) => {
     localStorage.setItem("harness-admin-token", t);
     setToken(t);
+    setProfile(readProfile());
   };
   const logout = () => {
     localStorage.removeItem("harness-admin-token");
+    localStorage.removeItem("harness-admin-profile");
     setToken(null);
+    setProfile(null);
   };
-  return { token, login, logout };
+  return { token, profile, login, logout };
 }
 
+const hasRole = (profile: AdminProfile | null, ...roles: string[]) =>
+  !!profile && profile.roles.some((r) => roles.includes(r));
+
 export default function App() {
-  const { token, login, logout } = useAuth();
+  const { token, profile, login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   if (!token) return <Login onSuccess={login} />;
 
   const selectedKey = location.pathname.replace("/", "") || "dashboard";
+
+  const menuItems = [
+    { key: "dashboard", icon: <HomeOutlined />, label: "Tổng quan" },
+    { key: "products", icon: <AppstoreOutlined />, label: "Sản phẩm" },
+    { key: "orders", icon: <ShoppingCartOutlined />, label: "Đơn hàng" },
+    ...(hasRole(profile, "Admin", "SuperAdmin", "Warehouse")
+      ? [{ key: "stocks", icon: <DatabaseOutlined />, label: "Tồn kho" }]
+      : []),
+    ...(hasRole(profile, "Admin", "SuperAdmin")
+      ? [{ key: "promotions", icon: <GiftOutlined />, label: "Khuyến mãi" }]
+      : []),
+    ...(hasRole(profile, "Admin", "SuperAdmin", "Reviewer")
+      ? [{ key: "reviews", icon: <StarOutlined />, label: "Kiểm duyệt" }]
+      : []),
+    ...(hasRole(profile, "Admin", "SuperAdmin", "Content")
+      ? [{ key: "banners", icon: <PictureOutlined />, label: "Banner" }]
+      : []),
+    ...(hasRole(profile, "Admin", "SuperAdmin", "Operations")
+      ? [{ key: "integration", icon: <ApiOutlined />, label: "Tích hợp" }]
+      : []),
+  ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -54,16 +97,7 @@ export default function App() {
           theme="dark"
           selectedKeys={[selectedKey]}
           onClick={({ key }) => navigate(`/${key}`)}
-          items={[
-            { key: "dashboard", icon: <HomeOutlined />, label: "Tổng quan" },
-            { key: "products", icon: <AppstoreOutlined />, label: "Sản phẩm" },
-            { key: "orders", icon: <ShoppingCartOutlined />, label: "Đơn hàng" },
-            { key: "stocks", icon: <DatabaseOutlined />, label: "Tồn kho" },
-            { key: "promotions", icon: <GiftOutlined />, label: "Khuyến mãi" },
-            { key: "reviews", icon: <StarOutlined />, label: "Kiểm duyệt" },
-            { key: "banners", icon: <PictureOutlined />, label: "Banner" },
-            { key: "integration", icon: <ApiOutlined />, label: "Tích hợp" },
-          ]}
+          items={menuItems}
         />
       </Sider>
       <Layout>
@@ -73,8 +107,15 @@ export default function App() {
             display: "flex",
             justifyContent: "flex-end",
             alignItems: "center",
+            gap: 16,
           }}
         >
+          <span>
+            {profile?.displayName ?? profile?.username ?? "Admin"}{" "}
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              {profile?.roles?.join(", ")}
+            </Typography.Text>
+          </span>
           <a onClick={logout} style={{ cursor: "pointer" }}>
             Đăng xuất
           </a>

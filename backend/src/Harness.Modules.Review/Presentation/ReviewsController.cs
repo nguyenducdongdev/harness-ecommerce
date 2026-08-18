@@ -1,6 +1,7 @@
 using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Review.Application;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Review.Presentation;
@@ -31,16 +32,19 @@ public class ReviewsController : ApiController
 
     /// <summary>Hàng chờ đánh giá chưa duyệt.</summary>
     [HttpGet("pending")]
+    [Authorize(Roles = "Admin,SuperAdmin,Reviewer")]
     public async Task<IActionResult> GetPending([FromQuery] int page = 1)
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetReviewModerationQueueQuery(page))));
 
     /// <summary>Duyệt đánh giá.</summary>
     [HttpPut("{id:guid}/approve")]
+    [Authorize(Roles = "Admin,SuperAdmin,Reviewer")]
     public async Task<IActionResult> Approve(Guid id)
         => Ok(ApiResponse<object>.Ok(await Mediator.Send(new ApproveReviewCommand(id)), "Đã duyệt đánh giá."));
 
     /// <summary>Từ chối đánh giá.</summary>
     [HttpPut("{id:guid}/reject")]
+    [Authorize(Roles = "Admin,SuperAdmin,Reviewer")]
     public async Task<IActionResult> Reject(Guid id)
         => Ok(ApiResponse<object>.Ok(await Mediator.Send(new RejectReviewCommand(id)), "Đã từ chối đánh giá."));
 }

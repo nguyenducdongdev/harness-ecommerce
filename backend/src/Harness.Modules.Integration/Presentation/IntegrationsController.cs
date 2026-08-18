@@ -2,12 +2,14 @@ using Harness.BuildingBlocks.Application.Common;
 using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Integration.Application;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Integration.Presentation;
 
 /// <summary>Giám sát vận hành Integration: event outbox + nhật ký đồng bộ hệ thống ngoài (admin/ops).</summary>
+[Authorize(Roles = "Admin,SuperAdmin,Operations")]
 public class IntegrationsController : ApiController
 {
     public IntegrationsController(ISender mediator) : base(mediator) { }

@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text;
 using FluentValidation;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -6,6 +7,8 @@ using Harness.Api.Persistence;
 using Harness.BuildingBlocks.Application.Behaviors;
 using Harness.BuildingBlocks.Infrastructure;
 using Harness.BuildingBlocks.Presentation.Middleware;
+using Harness.Modules.Auth;
+using Harness.Modules.Auth.Infrastructure;
 using Harness.Modules.Catalog;
 using Harness.Modules.Catalog.Application.Abstractions;
 using Harness.Modules.Catalog.Infrastructure;
@@ -15,7 +18,9 @@ using Harness.Modules.Inventory;
 using Harness.Modules.Integration.Infrastructure;
 using Harness.Modules.Payment;
 using Harness.Modules.Shipping;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 // ===== Assembly của tất cả module (MediatR + FluentValidation scan) =====
@@ -31,7 +36,8 @@ var moduleAssemblies = new[]
     Assembly.Load("Harness.Modules.Loyalty"),
     Assembly.Load("Harness.Modules.Review"),
     Assembly.Load("Harness.Modules.Cms"),
-    Assembly.Load("Harness.Modules.Integration")
+    Assembly.Load("Harness.Modules.Integration"),
+    Assembly.Load("Harness.Modules.Auth")
 };
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,6 +66,29 @@ builder.Services.AddShippingModule(builder.Configuration);
 builder.Services.AddPaymentModule(builder.Configuration);
 builder.Services.AddCustomerModule(builder.Configuration);
 builder.Services.AddInventoryModule(builder.Configuration);
+builder.Services.AddAuthModule(builder.Configuration);
+
+// ===== JWT Authentication + Authorization (admin RBAC) =====
+var authSection = builder.Configuration.GetSection("Auth");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = authSection["Issuer"] ?? "harness-api",
+            ValidateAudience = true,
+            ValidAudience = authSection["Audience"] ?? "harness-admin",
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(authSection["SecretKey"] ?? "harness-dev-secret-key-change-me-0123456789")),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
+            NameClaimType = System.Security.Claims.ClaimTypes.Name,
+            RoleClaimType = System.Security.Claims.ClaimTypes.Role
+        };
+    });
+builder.Services.AddAuthorization();
 
 // ===== MediatR (CQRS) + pipeline behaviors =====
 builder.Services.AddMediatR(cfg =>
@@ -123,6 +152,7 @@ if (app.Environment.IsDevelopment())
         await CatalogSeed.SeedAsync(db);
         await LoyaltySeed.SeedAsync(db);
         await CmsSeed.SeedAsync(db);
+        await AuthSeed.SeedAsync(db, builder.Configuration.GetSection("Auth").Get<JwtOptions>() ?? new());
 
         // Khởi tạo index Elasticsearch (best-effort — không ném lỗi nếu ES chưa sẵn sàng)
         var indexer = scope.ServiceProvider.GetRequiredService<IProductIndexer>();
@@ -130,6 +160,7 @@ if (app.Environment.IsDevelopment())
     }
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHangfireDashboard("/hangfire");

@@ -1,6 +1,7 @@
 using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Cms.Application;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Cms.Presentation;
@@ -16,11 +17,13 @@ public class BannersController : ApiController
 
     /// <summary>Tất cả banner (admin).</summary>
     [HttpGet("admin")]
+    [Authorize(Roles = "Admin,SuperAdmin,Content")]
     public async Task<IActionResult> GetAll()
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetAllBannersQuery())));
 
     /// <summary>Tạo banner mới (admin).</summary>
     [HttpPost]
+    [Authorize(Roles = "Admin,SuperAdmin,Content")]
     public async Task<IActionResult> Create([FromBody] CreateBannerCommand command)
     {
         var id = await Mediator.Send(command);
@@ -29,6 +32,7 @@ public class BannersController : ApiController
 
     /// <summary>Ẩn banner (admin).</summary>
     [HttpPut("{id:int}/deactivate")]
+    [Authorize(Roles = "Admin,SuperAdmin,Content")]
     public async Task<IActionResult> Deactivate(int id)
         => Ok(ApiResponse.Ok(await Mediator.Send(new DeactivateBannerCommand(id)), "Đã ẩn banner."));
 }

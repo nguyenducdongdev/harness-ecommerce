@@ -1,6 +1,7 @@
 using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Promotion.Application;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Promotion.Presentation;
@@ -16,6 +17,7 @@ public class VouchersController : ApiController
 
     /// <summary>Tạo voucher mới (admin).</summary>
     [HttpPost]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public async Task<IActionResult> Create([FromBody] CreateVoucherCommand command)
     {
         var id = await Mediator.Send(command);

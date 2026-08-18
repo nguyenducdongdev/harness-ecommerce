@@ -2,6 +2,7 @@ using Harness.BuildingBlocks.Presentation;
 using Harness.Modules.Order.Application;
 using Harness.Modules.Order.Domain;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Harness.Modules.Order.Presentation;
@@ -26,6 +27,7 @@ public class BookingsController : ApiController
 
     /// <summary>Cập nhật trạng thái lịch (admin): xác nhận / hoàn thành / hủy.</summary>
     [HttpPut("{id:guid}/status")]
+    [Authorize(Roles = "Admin,SuperAdmin,Operations")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateBookingStatusBody body)
     {
         var booking = await Mediator.Send(new UpdateBookingStatusCommand(id, body.NewStatus));

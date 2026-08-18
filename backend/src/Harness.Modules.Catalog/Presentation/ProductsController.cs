@@ -5,6 +5,7 @@ using Harness.Modules.Catalog.Application.Commands;
 using Harness.Modules.Catalog.Application.Dtos;
 using Harness.Modules.Catalog.Application.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,8 +44,9 @@ public class ProductsController : ApiController
     public async Task<IActionResult> GetAttributes([FromQuery] string? categorySlug = null)
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetProductAttributesQuery(categorySlug))));
 
-    /// <summary>Tạo sản phẩm mới (admin — sẽ chặn quyền ở Phase 2).</summary>
+    /// <summary>Tạo sản phẩm mới (admin).</summary>
     [HttpPost]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status201Created)]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
     {
@@ -54,6 +56,7 @@ public class ProductsController : ApiController
 
     /// <summary>Upload ảnh sản phẩm (admin — trả về URL ảnh đã lưu).</summary>
     [HttpPost("{id:int}/images")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
     public async Task<IActionResult> UploadImage(int id, IFormFile file, [FromServices] IFileStorage fileStorage)
     {
@@ -73,6 +76,7 @@ public class ProductsController : ApiController
 
     /// <summary>Cập nhật giá sản phẩm (admin).</summary>
     [HttpPut("{id:int}/price")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public async Task<IActionResult> UpdatePrice(int id, [FromBody] UpdateProductPriceRequest request)
     {
         await Mediator.Send(new UpdateProductPriceCommand(id, request.Price, request.SalePrice));
