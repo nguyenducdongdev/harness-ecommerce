@@ -6,4 +6,7 @@ public interface IProductSearch
     /// <summary>Tìm kiếm theo từ khóa (name/description/attributes), có phân trang (from/size).</summary>
     Task<IReadOnlyList<ProductSearchDocument>> SearchProductsAsync(
         string term, int from = 0, int size = 20, CancellationToken cancellationToken = default);
+
+    /// <summary>Số sản phẩm hiện có trong index (dùng cho monitoring metrics, best-effort).</summary>
+    Task<long> CountProductsAsync(CancellationToken cancellationToken = default);
 }

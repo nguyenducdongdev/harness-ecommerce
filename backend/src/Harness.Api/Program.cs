@@ -6,6 +6,7 @@ using Hangfire.PostgreSql;
 using Harness.Api.Persistence;
 using Harness.BuildingBlocks.Application.Behaviors;
 using Harness.BuildingBlocks.Infrastructure;
+using Harness.BuildingBlocks.Infrastructure.Events;
 using Harness.BuildingBlocks.Presentation.Middleware;
 using Harness.Modules.Auth;
 using Harness.Modules.Auth.Infrastructure;
@@ -19,9 +20,11 @@ using Harness.Modules.Integration.Infrastructure;
 using Harness.Modules.Integration.Application;
 using Harness.Modules.Payment;
 using Harness.Modules.Shipping;
+using Harness.Api.Observability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Prometheus;
 using Serilog;
 
 // ===== Assembly của tất cả module (MediatR + FluentValidation scan) =====
@@ -134,10 +137,20 @@ builder.Services.AddHangfire(config => config
     .UsePostgreSqlStorage(pg => pg.UseNpgsqlConnection(connectionString)));
 builder.Services.AddHangfireServer();
 
+// ===== Observability: Prometheus /metrics + business metrics reporter =====
+builder.Services.Configure<MetricsOptions>(builder.Configuration.GetSection(MetricsOptions.SectionName));
+builder.Services.AddSingleton<HarnessMetrics>();
+builder.Services.AddScoped<MetricsReporter>();
+builder.Services.AddHostedService<MetricsReporterHostedService>();
+
 // ===== Health checks =====
+var rabbitMqOptions = builder.Configuration.GetSection("RabbitMq").Get<RabbitMqOptions>() ?? new RabbitMqOptions();
 builder.Services.AddHealthChecks()
     .AddNpgSql(connectionString, name: "postgresql")
-    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379", name: "redis");
+    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379", name: "redis")
+    .AddRabbitMQ(
+        $"amqp://{rabbitMqOptions.UserName}:{rabbitMqOptions.Password}@{rabbitMqOptions.HostName}:{rabbitMqOptions.Port}",
+        name: "rabbitmq");
 
 var app = builder.Build();
 
@@ -171,9 +184,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseHttpMetrics();
 app.MapControllers();
 app.MapHangfireDashboard("/hangfire");
 app.MapHealthChecks("/health");
+app.MapMetrics();
 
 // Outbox publisher: mỗi phút publish các integration event chưa gửi
 RecurringJob.AddOrUpdate<OutboxPublisherJob>(

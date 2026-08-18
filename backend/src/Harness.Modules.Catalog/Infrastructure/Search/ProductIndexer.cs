@@ -117,6 +117,23 @@ public class ProductIndexer : IProductIndexer, IProductSearch
         }
     }
 
+    public async Task<long> CountProductsAsync(CancellationToken ct = default)
+    {
+        if (!_options.Enabled) return 0;
+
+        try
+        {
+            var resp = await _client.CountAsync<ProductSearchDocument>(
+                c => c.Index(_options.IndexProducts), ct);
+            return resp.IsValid ? resp.Count : 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Elasticsearch đếm sản phẩm thất bại (trả về 0): {Error}", ex.Message);
+            return 0;
+        }
+    }
+
     private QueryContainer BuildQuery(string term)
     {
         if (string.IsNullOrWhiteSpace(term))

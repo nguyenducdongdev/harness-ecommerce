@@ -2,10 +2,13 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  # Backend .NET expose /metrics qua prometheus-net (thêm Phase 2)
+  # Backend .NET expose /metrics qua prometheus-net (http_requests_total, latency histogram + harness_* business metrics)
   - job_name: "harness-api"
+    metrics_path: /metrics
     static_configs:
       - targets: ["host.docker.internal:5080"]
+        labels:
+          app: "harness-api"
 
   - job_name: "prometheus"
     static_configs:
