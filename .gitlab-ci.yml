@@ -112,6 +112,20 @@ admin:build:
     paths:
       - admin/node_modules/
 
+# ==================== MOBILE (Expo) ====================
+mobile:build:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd mobile
+    - npm ci
+    - npx tsc --noEmit
+    - npx expo export --platform web
+  cache:
+    key: mobile-node-modules-$CI_COMMIT_REF_SLUG
+    paths:
+      - mobile/node_modules/
+
 # ==================== DEPLOY (on-premise qua SSH) ====================
 # Bật khi có server — runner cần SSH private key ở biến DEPLOY_SSH_KEY
 # deploy:production:
