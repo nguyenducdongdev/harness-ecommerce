@@ -21,6 +21,7 @@ using Harness.Modules.Integration.Application;
 using Harness.Modules.Payment;
 using Harness.Modules.Shipping;
 using Harness.Api.Observability;
+using Harness.Api.Reporting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -142,6 +143,9 @@ builder.Services.Configure<MetricsOptions>(builder.Configuration.GetSection(Metr
 builder.Services.AddSingleton<HarnessMetrics>();
 builder.Services.AddScoped<MetricsReporter>();
 builder.Services.AddHostedService<MetricsReporterHostedService>();
+
+// ===== Reporting/Dashboard: query nặng bằng Dapper (Phase 3) =====
+builder.Services.AddScoped<DashboardQueries>();
 
 // ===== Health checks =====
 var rabbitMqOptions = builder.Configuration.GetSection("RabbitMq").Get<RabbitMqOptions>() ?? new RabbitMqOptions();
