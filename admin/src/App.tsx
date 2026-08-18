@@ -1,10 +1,24 @@
 import { useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { AppstoreOutlined, HomeOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import {
+  ApiOutlined,
+  AppstoreOutlined,
+  DatabaseOutlined,
+  GiftOutlined,
+  HomeOutlined,
+  PictureOutlined,
+  ShoppingCartOutlined,
+  StarOutlined,
+} from "@ant-design/icons";
 import { Layout, Menu } from "antd";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
+import Reviews from "./pages/Reviews";
+import Banners from "./pages/Banners";
+import Promotions from "./pages/Promotions";
+import Stocks from "./pages/Stocks";
+import Integration from "./pages/Integration";
 import Login from "./pages/Login";
 
 const { Header, Sider, Content } = Layout;
@@ -44,6 +58,11 @@ export default function App() {
             { key: "dashboard", icon: <HomeOutlined />, label: "Tổng quan" },
             { key: "products", icon: <AppstoreOutlined />, label: "Sản phẩm" },
             { key: "orders", icon: <ShoppingCartOutlined />, label: "Đơn hàng" },
+            { key: "stocks", icon: <DatabaseOutlined />, label: "Tồn kho" },
+            { key: "promotions", icon: <GiftOutlined />, label: "Khuyến mãi" },
+            { key: "reviews", icon: <StarOutlined />, label: "Kiểm duyệt" },
+            { key: "banners", icon: <PictureOutlined />, label: "Banner" },
+            { key: "integration", icon: <ApiOutlined />, label: "Tích hợp" },
           ]}
         />
       </Sider>
@@ -66,6 +85,11 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/products" element={<Products />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/stocks" element={<Stocks />} />
+            <Route path="/promotions" element={<Promotions />} />
+            <Route path="/reviews" element={<Reviews />} />
+            <Route path="/banners" element={<Banners />} />
+            <Route path="/integration" element={<Integration />} />
           </Routes>
         </Content>
       </Layout>

@@ -21,12 +21,12 @@ public class GetActiveBannersQueryHandler : IRequestHandler<GetActiveBannersQuer
                         && (b.StartAt == null || b.StartAt <= now)
                         && (b.EndAt == null || b.EndAt >= now))
             .OrderBy(b => b.SortOrder)
-            .Select(b => new BannerDto(b.Id, b.Title, b.ImageUrl, b.LinkUrl, b.Position, b.SortOrder))
+            .Select(b => new BannerDto(b.Id, b.Title, b.ImageUrl, b.LinkUrl, b.Position, b.SortOrder, true))
             .ToListAsync(cancellationToken);
     }
 }
 
-public record BannerDto(int Id, string Title, string ImageUrl, string? LinkUrl, string Position, int SortOrder);
+public record BannerDto(int Id, string Title, string ImageUrl, string? LinkUrl, string Position, int SortOrder, bool IsActive);
 
 public record GetPageBySlugQuery(string Slug) : IRequest<PageDto?>;
 
@@ -103,6 +103,6 @@ public class GetAllBannersQueryHandler : IRequestHandler<GetAllBannersQuery, IRe
     public async Task<IReadOnlyList<BannerDto>> Handle(GetAllBannersQuery request, CancellationToken cancellationToken)
         => await _db.Set<Banner>().AsNoTracking()
             .OrderBy(b => b.Position).ThenBy(b => b.SortOrder)
-            .Select(b => new BannerDto(b.Id, b.Title, b.ImageUrl, b.LinkUrl, b.Position, b.SortOrder))
+            .Select(b => new BannerDto(b.Id, b.Title, b.ImageUrl, b.LinkUrl, b.Position, b.SortOrder, b.IsActive))
             .ToListAsync(cancellationToken);
 }
