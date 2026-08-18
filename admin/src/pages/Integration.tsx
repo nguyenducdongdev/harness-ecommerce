@@ -31,6 +31,25 @@ interface SyncLog {
   createdAt: string;
 }
 
+interface ErpOrder {
+  id: string;
+  erpOrderNo: string;
+  orderNumber: string;
+  customerPhone: string;
+  totalAmount: number;
+  paymentMethod: string;
+  deliveryMethod: string;
+  status: string;
+  syncedAt: string | null;
+}
+
+interface ErpSummary {
+  totalOrders: number;
+  syncedEvents: number;
+  failedEvents: number;
+  pendingEvents: number;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   Processed: "green",
   Pending: "orange",
@@ -46,21 +65,30 @@ export default function Integration() {
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [logsTotal, setLogsTotal] = useState(0);
   const [logsPage, setLogsPage] = useState(1);
+  const [erpOrders, setErpOrders] = useState<ErpOrder[]>([]);
+  const [erpTotal, setErpTotal] = useState(0);
+  const [erpPage, setErpPage] = useState(1);
+  const [erpSummary, setErpSummary] = useState<ErpSummary>({ totalOrders: 0, syncedEvents: 0, failedEvents: 0, pendingEvents: 0 });
   const [loading, setLoading] = useState(false);
 
-  async function load(outboxPageNo = outboxPage, logsPageNo = logsPage) {
+  async function load(outboxPageNo = outboxPage, logsPageNo = logsPage, erpPageNo = erpPage) {
     setLoading(true);
     try {
-      const [s, ob, sl] = await Promise.all([
+      const [s, ob, sl, es, eo] = await Promise.all([
         api.get("/api/v1/integrations/outbox/status"),
         api.get("/api/v1/integrations/outbox", { params: { page: outboxPageNo, pageSize: 20 } }),
         api.get("/api/v1/integrations/sync-logs", { params: { page: logsPageNo, pageSize: 20 } }),
+        api.get("/api/v1/integrations/erp/summary"),
+        api.get("/api/v1/integrations/erp/orders", { params: { page: erpPageNo, pageSize: 20 } }),
       ]);
       setStatus(s.data?.data ?? { total: 0, pending: 0, processed: 0, failed: 0 });
       setOutbox(ob.data?.data?.items ?? []);
       setOutboxTotal(ob.data?.data?.totalCount ?? 0);
       setLogs(sl.data?.data?.items ?? []);
       setLogsTotal(sl.data?.data?.totalCount ?? 0);
+      setErpSummary(es.data?.data ?? { totalOrders: 0, syncedEvents: 0, failedEvents: 0, pendingEvents: 0 });
+      setErpOrders(eo.data?.data?.items ?? []);
+      setErpTotal(eo.data?.data?.totalCount ?? 0);
     } catch {
       messageApi.error("Không tải được dữ liệu Integration — backend đã chạy chưa?");
     } finally {
@@ -77,9 +105,19 @@ export default function Integration() {
     try {
       const res = await api.post("/api/v1/integrations/outbox/retry");
       messageApi.success(res.data?.message ?? "Đã retry.");
-      load(outboxPage, logsPage);
+      load(outboxPage, logsPage, erpPage);
     } catch (err: any) {
       messageApi.error(err?.response?.data?.message ?? "Retry thất bại.");
+    }
+  }
+
+  async function retryErp() {
+    try {
+      const res = await api.post("/api/v1/integrations/erp/retry");
+      messageApi.success(res.data?.message ?? "Đã retry ERP.");
+      load(outboxPage, logsPage, erpPage);
+    } catch (err: any) {
+      messageApi.error(err?.response?.data?.message ?? "Retry ERP thất bại.");
     }
   }
 
@@ -195,6 +233,68 @@ export default function Integration() {
               dataIndex: "createdAt",
               width: 150,
               render: (v: string) => new Date(v).toLocaleString("vi-VN"),
+            },
+          ]}
+        />
+      </Card>
+
+      <Card title="Phiếu bán đã đồng bộ ERP (RabbitMQ → integration.erp_sales_orders)" size="small" style={{ marginTop: 16 }}>
+        <Row gutter={16} style={{ marginBottom: 12 }}>
+          <Col span={6}>
+            <Statistic title="Tổng phiếu ERP" value={erpSummary.totalOrders} />
+          </Col>
+          <Col span={6}>
+            <Statistic title="Event đã đồng bộ" value={erpSummary.syncedEvents} valueStyle={{ color: "#3f8600" }} />
+          </Col>
+          <Col span={6}>
+            <Statistic title="Event chờ" value={erpSummary.pendingEvents} valueStyle={{ color: "#cf6600" }} />
+          </Col>
+          <Col span={6}>
+            <Statistic title="Event lỗi" value={erpSummary.failedEvents} valueStyle={{ color: "#cf1322" }} />
+          </Col>
+        </Row>
+        <Space style={{ marginBottom: 12 }}>
+          <Button type="primary" icon={<CloudSyncOutlined />} onClick={retryErp} loading={loading}>
+            Retry bản ghi ERP lỗi
+          </Button>
+        </Space>
+        <Table
+          rowKey="id"
+          size="small"
+          loading={loading}
+          dataSource={erpOrders}
+          pagination={{
+            current: erpPage,
+            total: erpTotal,
+            pageSize: 20,
+            onChange: (p) => {
+              setErpPage(p);
+              load(outboxPage, logsPage, p);
+            },
+          }}
+          columns={[
+            { title: "Mã phiếu ERP", dataIndex: "erpOrderNo", width: 180 },
+            { title: "Mã đơn TMĐT", dataIndex: "orderNumber", width: 180 },
+            { title: "SĐT khách", dataIndex: "customerPhone", width: 130 },
+            {
+              title: "Tổng tiền",
+              dataIndex: "totalAmount",
+              width: 120,
+              render: (v: number) => v.toLocaleString("vi-VN") + "₫",
+            },
+            { title: "Thanh toán", dataIndex: "paymentMethod", width: 110 },
+            { title: "Giao hàng", dataIndex: "deliveryMethod", width: 110 },
+            {
+              title: "Trạng thái",
+              dataIndex: "status",
+              width: 110,
+              render: (v: string) => <Tag color={v === "Created" ? "blue" : v === "Paid" ? "green" : "default"}>{v}</Tag>,
+            },
+            {
+              title: "Đồng bộ lúc",
+              dataIndex: "syncedAt",
+              width: 150,
+              render: (v: string | null) => (v ? new Date(v).toLocaleString("vi-VN") : "—"),
             },
           ]}
         />

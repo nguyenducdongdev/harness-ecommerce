@@ -43,4 +43,26 @@ public class IntegrationsController : ApiController
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetSyncLogsQuery(targetSystem, success, page, pageSize))));
+
+    // ===== ERP / DMS (sản xuất) — đồng bộ qua RabbitMQ =====
+
+    /// <summary>Danh sách phiếu bán đã đồng bộ sang ERP.</summary>
+    [HttpGet("erp/orders")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<ErpOrderDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetErpOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetErpOrdersQuery(page, pageSize))));
+
+    /// <summary>Tổng hợp đồng bộ ERP (số phiếu, event synced/failed/pending).</summary>
+    [HttpGet("erp/summary")]
+    [ProducesResponseType(typeof(ApiResponse<ErpSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetErpSummary()
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetErpSummaryQuery())));
+
+    /// <summary>Chạy lại các bản ghi ERP failed từ payload đã lưu.</summary>
+    [HttpPost("erp/retry")]
+    public async Task<IActionResult> RetryErp()
+    {
+        var count = await Mediator.Send(new RetryErpCommand());
+        return Ok(ApiResponse<object>.Ok(new { count }, $"Đã thử lại {count} bản ghi ERP."));
+    }
 }

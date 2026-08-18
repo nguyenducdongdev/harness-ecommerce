@@ -16,6 +16,7 @@ using Harness.Modules.Catalog.Infrastructure.Search;
 using Harness.Modules.Customer;
 using Harness.Modules.Inventory;
 using Harness.Modules.Integration.Infrastructure;
+using Harness.Modules.Integration.Application;
 using Harness.Modules.Payment;
 using Harness.Modules.Shipping;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -67,6 +68,14 @@ builder.Services.AddPaymentModule(builder.Configuration);
 builder.Services.AddCustomerModule(builder.Configuration);
 builder.Services.AddInventoryModule(builder.Configuration);
 builder.Services.AddAuthModule(builder.Configuration);
+
+// ===== Integration/ERP: handlers đồng bộ + processor + consumer RabbitMQ =====
+builder.Services.Configure<ErpOptions>(builder.Configuration.GetSection(ErpOptions.SectionName));
+builder.Services.AddScoped<IErpSyncHandler, ErpOrderSyncHandler>();
+builder.Services.AddScoped<IErpSyncHandler, ErpOrderStatusSyncHandler>();
+builder.Services.AddScoped<IErpSyncHandler, ErpPaymentSyncHandler>();
+builder.Services.AddScoped<ErpSyncProcessor>();
+builder.Services.AddHostedService<ErpSyncHostedService>();
 
 // ===== JWT Authentication + Authorization (admin RBAC) =====
 var authSection = builder.Configuration.GetSection("Auth");
