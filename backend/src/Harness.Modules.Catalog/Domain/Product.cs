@@ -32,6 +32,7 @@ public class Product : AuditableEntity<int>
     /// <summary>Thuộc tính động: { "phongCach": "Hiện đại", "chatLieu": "Gỗ óc chó", "soGhe": "3 chỗ", ... }</summary>
     public Dictionary<string, string> Attributes { get; private set; } = new();
     public List<string> ImageUrls { get; private set; } = new();
+    public string? Model3dUrl { get; private set; }
 
     private readonly List<ProductVariant> _variants = new();
     public ICollection<ProductVariant> Variants => _variants;
@@ -89,6 +90,7 @@ public class Product : AuditableEntity<int>
 
     public void Deactivate() => IsActive = false;
     public void IncreaseViewCount() => ViewCount++;
+    public void SetModel3dUrl(string? url) => Model3dUrl = url;
 }
 
 public sealed record ProductCreatedDomainEvent(string Slug) : DomainEvent;

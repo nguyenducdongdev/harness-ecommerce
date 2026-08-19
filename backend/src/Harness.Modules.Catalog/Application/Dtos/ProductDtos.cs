@@ -32,7 +32,8 @@ public record ProductDto(
     int ViewCount,
     Dictionary<string, string> Attributes,
     List<string> ImageUrls,
-    IReadOnlyList<ProductVariantDto> Variants)
+    IReadOnlyList<ProductVariantDto> Variants,
+    string? Model3dUrl = null)
 {
     /// <summary>Giá hiển thị trên website (giá sale nếu có).</summary>
     public decimal DisplayPrice => SalePrice ?? Price;

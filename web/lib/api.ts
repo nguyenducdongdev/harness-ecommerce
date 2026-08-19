@@ -49,6 +49,7 @@ export interface Product {
   variants: ProductVariant[];
   displayPrice: number;
   discountPercent: number;
+  model3dUrl?: string | null;
 }
 
 export interface Category {
@@ -94,7 +95,37 @@ export const api = {
   },
   getProduct: (slug: string) => fetchApi<Product>(`/api/v1/products/${slug}`),
   getCategories: () => fetchApi<Category[]>("/api/v1/categories"),
+  getQuizRecommendation: (data: QuizRequest) => fetchApi<QuizRecommendationResult>("/api/v1/products/quiz/recommend", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
 };
+
+export interface QuizRequest {
+  roomType: string;
+  roomAreaM2?: number;
+  style?: string;
+  minBudget?: number;
+  maxBudget?: number;
+}
+
+export interface QuizRecommendationResult {
+  roomType: string;
+  style: string | null;
+  roomAreaM2: number | null;
+  summary: string;
+  totalEstimatedPrice: number;
+  recommendedProducts: Product[];
+  recommendedCombos: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    roomTypeLabel: string;
+    description: string | null;
+    saleTotal: number;
+    savings: number;
+  }>;
+}
 
 // ===== Promotion: Flash Sale =====
 export interface FlashSaleItemDto {

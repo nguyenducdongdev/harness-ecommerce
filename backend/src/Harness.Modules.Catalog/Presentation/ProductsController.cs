@@ -44,6 +44,12 @@ public class ProductsController : ApiController
     public async Task<IActionResult> GetAttributes([FromQuery] string? categorySlug = null)
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetProductAttributesQuery(categorySlug))));
 
+    /// <summary>Tư vấn nội thất thông minh (Quiz recommendation).</summary>
+    [HttpPost("quiz/recommend")]
+    [ProducesResponseType(typeof(ApiResponse<QuizRecommendationResultDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetQuizRecommendation([FromBody] QuizRequestDto request)
+        => Ok(ApiResponse.Ok(await Mediator.Send(new GetQuizRecommendationQuery(request))));
+
     /// <summary>Tạo sản phẩm mới (admin).</summary>
     [HttpPost]
     [Authorize(Roles = "Admin,SuperAdmin")]

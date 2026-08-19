@@ -158,5 +158,6 @@ internal static class ProductMapper
         p.Price, p.SalePrice, p.WarrantyMonths, p.IsActive, p.IsFeatured, p.ViewCount,
         p.Attributes, p.ImageUrls,
         p.Variants.Select(v => new ProductVariantDto(
-            v.Id, v.Sku, v.SizeName, v.WidthCm, v.DepthCm, v.HeightCm, v.Color, v.PriceOverride)).ToList());
+            v.Id, v.Sku, v.SizeName, v.WidthCm, v.DepthCm, v.HeightCm, v.Color, v.PriceOverride)).ToList(),
+        p.Model3dUrl);
 }
