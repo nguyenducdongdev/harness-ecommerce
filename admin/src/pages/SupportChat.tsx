@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card, Input, Button, Tag } from "antd";
 import { UserOutlined, SendOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from "@ant-design/icons";
-import * as signalR from "@microsoft/signalr";
 
 interface Message {
   id: string;

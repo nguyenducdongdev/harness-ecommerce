@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Table, Button, Modal, Form, Input, Select, InputNumber, Space, Card, Progress, Tabs, message } from "antd";
-import { TrophyOutlined, PlusOutlined, BarChartOutlined, TargetOutlined } from "@ant-design/icons";
+import { TrophyOutlined, PlusOutlined, BarChartOutlined, TagOutlined } from "@ant-design/icons";
 import { api, KpiTargetItem, SalesKpiReportItem, StoreItem } from "../api";
 
 export default function Kpi() {
@@ -95,7 +95,7 @@ export default function Kpi() {
         <Tabs
           items={[
             { key: "report", label: <span><BarChartOutlined /> Báo Cáo KPI</span>, children: <Table columns={reportColumns} dataSource={report} rowKey={(r) => r.staffName} loading={loading} /> },
-            { key: "targets", label: <span><TargetOutlined /> Chỉ Tiêu Đã Giao</span>, children: <Table columns={targetColumns} dataSource={targets} rowKey="id" loading={loading} /> },
+            { key: "targets", label: <span><TagOutlined /> Chỉ Tiêu Đã Giao</span>, children: <Table columns={targetColumns} dataSource={targets} rowKey="id" loading={loading} /> },
           ]}
         />
       </Card>
