@@ -9,6 +9,9 @@ import {
   PictureOutlined,
   ShoppingCartOutlined,
   StarOutlined,
+  ShopOutlined,
+  CalendarOutlined,
+  TrophyOutlined,
 } from "@ant-design/icons";
 import { Layout, Menu, Typography } from "antd";
 import Dashboard from "./pages/Dashboard";
@@ -19,6 +22,9 @@ import Banners from "./pages/Banners";
 import Promotions from "./pages/Promotions";
 import Stocks from "./pages/Stocks";
 import Integration from "./pages/Integration";
+import Stores from "./pages/Stores";
+import Attendance from "./pages/Attendance";
+import Kpi from "./pages/Kpi";
 import Login from "./pages/Login";
 
 const { Header, Sider, Content } = Layout;
@@ -85,7 +91,12 @@ export default function App() {
       ? [{ key: "banners", icon: <PictureOutlined />, label: "Banner" }]
       : []),
     ...(hasRole(profile, "Admin", "SuperAdmin", "Operations")
-      ? [{ key: "integration", icon: <ApiOutlined />, label: "Tích hợp" }]
+      ? [
+          { key: "stores", icon: <ShopOutlined />, label: "Cửa hàng" },
+          { key: "attendance", icon: <CalendarOutlined />, label: "Chấm công" },
+          { key: "kpi", icon: <TrophyOutlined />, label: "KPI Sales" },
+          { key: "integration", icon: <ApiOutlined />, label: "Tích hợp" },
+        ]
       : []),
   ];
 
@@ -130,6 +141,9 @@ export default function App() {
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/banners" element={<Banners />} />
+            <Route path="/stores" element={<Stores />} />
+            <Route path="/attendance" element={<Attendance />} />
+            <Route path="/kpi" element={<Kpi />} />
             <Route path="/integration" element={<Integration />} />
           </Routes>
         </Content>

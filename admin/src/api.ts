@@ -27,3 +27,58 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+export interface StoreItem {
+  id: string;
+  code: string;
+  name: string;
+  address: string;
+  phone: string;
+  managerName?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AttendanceItem {
+  id: string;
+  staffId: string;
+  staffName: string;
+  storeId: string;
+  storeName: string;
+  workDate: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  status: number;
+  statusText: string;
+  notes?: string;
+}
+
+export interface KpiTargetItem {
+  id: string;
+  staffId: string;
+  staffName: string;
+  storeId?: string;
+  storeName?: string;
+  month: number;
+  year: number;
+  targetRevenue: number;
+  targetOrders: number;
+  notes?: string;
+}
+
+export interface SalesKpiReportItem {
+  targetId?: string;
+  staffId: string;
+  staffName: string;
+  storeId?: string;
+  storeName?: string;
+  month: number;
+  year: number;
+  targetRevenue: number;
+  targetOrders: number;
+  actualRevenue: number;
+  actualOrders: number;
+  revenueCompletionRate: number;
+  orderCompletionRate: number;
+}
+

@@ -27,6 +27,7 @@ public class AppDbContext : DbContext, IHarnessDbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Cms.Infrastructure.Persistence.BannerConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Integration.Infrastructure.Persistence.IntegrationSyncLogConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Auth.Infrastructure.Persistence.AdminUserConfiguration).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(Harness.Modules.Organization.Infrastructure.Persistence.StoreConfiguration).Assembly);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

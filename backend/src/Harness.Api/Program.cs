@@ -12,6 +12,7 @@ using Harness.BuildingBlocks.Infrastructure.Events;
 using Harness.BuildingBlocks.Presentation.Middleware;
 using Harness.Modules.Auth;
 using Harness.Modules.Auth.Infrastructure;
+using Harness.Modules.Organization;
 using Harness.Modules.Catalog;
 using Harness.Modules.Catalog.Application.Abstractions;
 using Harness.Modules.Catalog.Infrastructure;
@@ -44,7 +45,8 @@ var moduleAssemblies = new[]
     Assembly.Load("Harness.Modules.Review"),
     Assembly.Load("Harness.Modules.Cms"),
     Assembly.Load("Harness.Modules.Integration"),
-    Assembly.Load("Harness.Modules.Auth")
+    Assembly.Load("Harness.Modules.Auth"),
+    Assembly.Load("Harness.Modules.Organization")
 };
 
 var builder = WebApplication.CreateBuilder(args);

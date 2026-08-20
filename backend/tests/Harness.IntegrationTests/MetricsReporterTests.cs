@@ -15,8 +15,7 @@ namespace Harness.IntegrationTests;
 /// Integration test cho Observability (M11): MetricsReporter đọc dữ liệu từ InMemory DB
 /// và Elasticsearch stub rồi cập nhật đúng gauge trên Prometheus registry riêng.
 /// </summary>
-p
-ublic class MetricsReporterTests
+public class MetricsReporterTests
 {
     private static AppDbContext CreateDb()
     {
