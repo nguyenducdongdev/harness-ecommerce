@@ -1,4 +1,6 @@
+using Harness.Api.Hubs;
 using System.Reflection;
+
 using System.Text;
 using FluentValidation;
 using Hangfire;
@@ -116,6 +118,8 @@ builder.Services.AddValidatorsFromAssemblies(moduleAssemblies);
 
 // ===== MVC controllers (tự động scan controller trong assembly tham chiếu) =====
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
+
 
 // ===== Swagger =====
 builder.Services.AddEndpointsApiExplorer();
@@ -190,6 +194,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseHttpMetrics();
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
+
 app.MapHangfireDashboard("/hangfire");
 app.MapHealthChecks("/health");
 app.MapMetrics();
