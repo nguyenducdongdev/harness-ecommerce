@@ -816,7 +816,7 @@ namespace Harness.Api.Persistence.Migrations
                 schema: "catalog",
                 table: "products",
                 column: "IsFeatured",
-                filter: "is_featured = true");
+                filter: "\"IsFeatured\" = true");
 
             migrationBuilder.CreateIndex(
                 name: "IX_products_Sku",
