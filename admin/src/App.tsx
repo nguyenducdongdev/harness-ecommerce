@@ -13,6 +13,9 @@ import {
   ShopOutlined,
   CalendarOutlined,
   TrophyOutlined,
+  TeamOutlined,
+  CarOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { Layout, Menu, Typography } from "antd";
 import Dashboard from "./pages/Dashboard";
@@ -27,6 +30,11 @@ import Stores from "./pages/Stores";
 import Attendance from "./pages/Attendance";
 import Kpi from "./pages/Kpi";
 import SupportChat from "./pages/SupportChat";
+import Customers from "./pages/Customers";
+import Categories from "./pages/Categories";
+import Combos from "./pages/Combos";
+import Shipping from "./pages/Shipping";
+import Loyalty from "./pages/Loyalty";
 import Login from "./pages/Login";
 
 const { Header, Sider, Content } = Layout;
@@ -103,6 +111,15 @@ export default function App() {
     ...(hasRole(profile, "Admin", "SuperAdmin", "Support")
       ? [{ key: "support", icon: <CustomerServiceOutlined />, label: "Hỗ trợ Chat" }]
       : []),
+    ...(hasRole(profile, "Admin", "SuperAdmin")
+      ? [
+          { key: "customers", icon: <TeamOutlined />, label: "Khách hàng" },
+          { key: "categories", icon: <AppstoreOutlined />, label: "Danh mục" },
+          { key: "combos", icon: <ThunderboltOutlined />, label: "Combo phòng" },
+          { key: "shipping", icon: <CarOutlined />, label: "Vận chuyển" },
+          { key: "loyalty", icon: <StarOutlined />, label: "Tích điểm" },
+        ]
+      : []),
   ];
 
   return (
@@ -151,6 +168,11 @@ export default function App() {
             <Route path="/kpi" element={<Kpi />} />
             <Route path="/integration" element={<Integration />} />
             <Route path="/support" element={<SupportChat />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/combos" element={<Combos />} />
+            <Route path="/shipping" element={<Shipping />} />
+            <Route path="/loyalty" element={<Loyalty />} />
           </Routes>
         </Content>
       </Layout>
