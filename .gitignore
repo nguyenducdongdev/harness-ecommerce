@@ -53,7 +53,13 @@ secrets/
 /.claude
 /.cursor
 /.trellis
-  expo_create.txt
-  # ===== Build scratch (output log of ad-hoc dotnet / npm / tsc commands) =====
-  _*.txt
 /.trae
+
+# ===== Build scratch (output log of ad-hoc dotnet / npm / tsc commands) =====
+expo_create.txt
+_*.txt
+/.trae
+# ===== Log files (ad-hoc run) =====
+*.log
+*.log.err
+*.err.log
