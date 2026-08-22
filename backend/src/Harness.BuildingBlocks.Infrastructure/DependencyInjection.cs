@@ -1,6 +1,7 @@
 using Harness.BuildingBlocks.Application.Abstractions;
 using Harness.BuildingBlocks.Infrastructure.Caching;
 using Harness.BuildingBlocks.Infrastructure.Events;
+using Harness.BuildingBlocks.Infrastructure.Localization;
 using Harness.BuildingBlocks.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,10 @@ public static class DependencyInjection
         services.Configure<RabbitMqOptions>(configuration.GetSection("RabbitMq"));
         services.AddSingleton<IEventBus, RabbitMqEventBus>();
         services.AddSingleton<ICacheService, RedisCacheService>();
+
+        // Currency & Localization
+        services.AddSingleton<ICurrencyConverterService, CurrencyConverterService>();
+        services.AddSingleton<ILocalizationService, LocalizationService>();
 
         // File storage: local filesystem (Dev/Staging) hoặc MinIO (Production)
         // Chọn provider qua config: FileStorage:Provider = "local" | "minio"

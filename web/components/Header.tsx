@@ -3,6 +3,7 @@ import type { Category } from "@/lib/api";
 import { fetchFromServer } from "@/lib/api";
 import { CartBadge } from "./CartBadge";
 import { HeaderUserMenu } from "./HeaderUserMenu";
+import LanguageCurrencySelector from "./LanguageCurrencySelector";
 
 export async function Header() {
   const categories = (await fetchFromServer<Category[]>("/api/v1/categories")) ?? [];
@@ -27,22 +28,24 @@ export async function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <LanguageCurrencySelector />
           <Link href="/flash-sale" className="hidden text-sm font-medium text-red-600 hover:text-red-700 md:block">
-            ⚡ Flash sale
+            Flash sale
           </Link>
           <Link href="/membership" className="hidden text-sm text-neutral-600 hover:text-brand-600 md:block">
-            ⭐ Tích điểm
+            Tích điểm
           </Link>
           <Link href="/booking" className="hidden text-sm text-neutral-600 hover:text-brand-600 md:block">
             Đặt lịch
           </Link>
-          <Link href="/track" className="hidden text-sm text-neutral-600 hover:text-brand-600 md:block">
+          <Link href="/track" className="hidden text-sm text-neutral-600 hover:text-brand-600 sm:block">
             Tra cứu đơn
           </Link>
-          <HeaderUserMenu />
           <CartBadge />
+          <HeaderUserMenu />
         </div>
       </div>
     </header>
   );
 }
+

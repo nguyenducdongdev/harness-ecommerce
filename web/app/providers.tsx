@@ -2,6 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { I18nProvider } from "@/context/I18nContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -13,5 +15,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <I18nProvider>
+        <CurrencyProvider>{children}</CurrencyProvider>
+      </I18nProvider>
+    </QueryClientProvider>
+  );
 }
+
