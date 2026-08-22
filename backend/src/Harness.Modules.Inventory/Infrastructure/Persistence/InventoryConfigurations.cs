@@ -14,11 +14,13 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.HasIndex(x => x.Code).IsUnique();
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Address).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.Latitude).HasPrecision(9, 6);
+        builder.Property(x => x.Longitude).HasPrecision(9, 6);
 
         builder.HasData(
-            new { Id = 1, Code = "HCM-01", Name = "Showroom Quận 1", Address = "123 Nguyễn Huệ, Q1, TP.HCM", IsShowroom = true, IsActive = true, Phone = "02812345678", CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
-            new { Id = 2, Code = "HN-01", Name = "Showroom Cầu Giấy", Address = "45 Xuân Thủy, Cầu Giấy, Hà Nội", IsShowroom = true, IsActive = true, Phone = "02412345678", CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
-            new { Id = 3, Code = "KHO-TONG", Name = "Kho tổng Bình Dương", Address = "Khu CN VSIP, Bình Dương", IsShowroom = false, IsActive = true, CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" });
+            new { Id = 1, Code = "HCM-01", Name = "Showroom Quận 1", Address = "123 Nguyễn Huệ, Q1, TP.HCM", IsShowroom = true, IsActive = true, Phone = "02812345678", Latitude = 10.7723, Longitude = 106.7043, CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
+            new { Id = 2, Code = "HN-01", Name = "Showroom Cầu Giấy", Address = "45 Xuân Thủy, Cầu Giấy, Hà Nội", IsShowroom = true, IsActive = true, Phone = "02412345678", Latitude = 21.0285, Longitude = 105.7892, CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" },
+            new { Id = 3, Code = "KHO-TONG", Name = "Kho tổng Bình Dương", Address = "Khu CN VSIP, Bình Dương", IsShowroom = false, IsActive = true, Latitude = 10.9556, Longitude = 106.6890, CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CreatedBy = "seed" });
     }
 }
 

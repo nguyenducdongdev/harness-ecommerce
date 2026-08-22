@@ -11,6 +11,10 @@ public class Warehouse : AuditableEntity<int>
     public string? Phone { get; set; }
     public bool IsShowroom { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>Vĩ độ địa lý — dùng cho M15 auto-allocation (tìm kho gần nhất).</summary>
+    public double? Latitude { get; set; }
+    /// <summary>Kinh độ địa lý — dùng cho M15 auto-allocation (tìm kho gần nhất).</summary>
+    public double? Longitude { get; set; }
 }
 
 /// <summary>Tồn kho theo (kho × SKU biến thể).</summary>

@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Harness.UnitTests;
 
-/// <summary>Kiểm thử tồn kho theo showroom: giữ chỗ / hoàn giữ chỗ / điều chỉnh.</summary>
+/// <summary>Kiểm thử tồn kho theo showroom: giữ chờ / hoàn giữ chờ / điều chỉnh.</summary>
 public class StockLevelTests
 {
     [Fact]

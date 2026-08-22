@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+using FluentValidation;
+using Harness.BuildingBlocks.Application.Abstractions;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
 using Harness.Modules.Inventory.Domain;
 using MediatR;
@@ -295,10 +296,33 @@ public class GetWarehousesQueryHandler : IRequestHandler<GetWarehousesQuery, IRe
         var query = _db.Set<Warehouse>().AsNoTracking();
         if (request.OnlyActive) query = query.Where(w => w.IsActive);
         return await query.OrderBy(w => w.Id)
-            .Select(w => new WarehouseDto(w.Id, w.Code, w.Name, w.Address, w.IsShowroom))
+            .Select(w => new WarehouseDto(w.Id, w.Code, w.Name, w.Address, w.IsShowroom, w.Latitude, w.Longitude))
             .ToListAsync(cancellationToken);
     }
 }
 
-public record WarehouseDto(int Id, string Code, string Name, string Address, bool IsShowroom);
+public record FindNearestWarehouseQuery(double Latitude, double Longitude, string? Sku = null, int Quantity = 1) : IRequest<NearestWarehouseDto?>;
+
+public class FindNearestWarehouseQueryHandler : IRequestHandler<FindNearestWarehouseQuery, NearestWarehouseDto?>
+{
+    private readonly IWarehouseAllocator _allocator;
+
+    public FindNearestWarehouseQueryHandler(IWarehouseAllocator allocator) => _allocator = allocator;
+
+    public async Task<NearestWarehouseDto?> Handle(FindNearestWarehouseQuery request, CancellationToken cancellationToken)
+    {
+        var required = request.Sku is null
+            ? null
+            : new Dictionary<string, int> { [request.Sku] = Math.Max(request.Quantity, 1) };
+
+        var result = await _allocator.FindNearestAsync(request.Latitude, request.Longitude, required, cancellationToken);
+        if (result.WarehouseId is null) return null;
+
+        return new NearestWarehouseDto(result.WarehouseId.Value, result.DistanceKm, result.Reason);
+    }
+}
+
+public record NearestWarehouseDto(int WarehouseId, double DistanceKm, string Reason);
+
+public record WarehouseDto(int Id, string Code, string Name, string Address, bool IsShowroom, double? Latitude = null, double? Longitude = null);
 

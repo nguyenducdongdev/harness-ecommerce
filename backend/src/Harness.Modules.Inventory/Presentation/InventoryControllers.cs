@@ -57,4 +57,18 @@ public class WarehousesController : ApiController
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] bool onlyActive = true)
         => Ok(ApiResponse.Ok(await Mediator.Send(new GetWarehousesQuery(onlyActive))));
+
+    /// <summary>M15 — Tìm kho/showroom gần nhất với toạ độ giao hàng (Haversine).</summary>
+    [HttpGet("nearest")]
+    public async Task<IActionResult> FindNearest(
+        [FromQuery] double lat,
+        [FromQuery] double lng,
+        [FromQuery] string? sku = null,
+        [FromQuery] int quantity = 1)
+    {
+        var result = await Mediator.Send(new FindNearestWarehouseQuery(lat, lng, sku, quantity));
+        return result is null
+            ? NotFound(ApiResponse.Fail("Không có kho active có toạ độ để phân bổ."))
+            : Ok(ApiResponse.Ok(result));
+    }
 }

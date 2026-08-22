@@ -1,6 +1,7 @@
 using FluentValidation;
 using Harness.BuildingBlocks.Application.Common;
 using Harness.BuildingBlocks.Infrastructure.Persistence;
+using Harness.BuildingBlocks.Application.Abstractions;
 using Harness.Modules.Order.Domain;
 using OrderEntity = Harness.Modules.Order.Domain.Order;
 using MediatR;
@@ -21,7 +22,9 @@ public record CreateOrderCommand(
     List<OrderItemInput> Items,
     decimal ShippingFee = 0,
     decimal DiscountAmount = 0,
-    int? WarehouseId = null) : IRequest<OrderDto>;
+    int? WarehouseId = null,
+    double? DeliveryLatitude = null,
+    double? DeliveryLongitude = null) : IRequest<OrderDto>;
 
 public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
 {
@@ -33,6 +36,10 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
         RuleFor(x => x.CustomerEmail).EmailAddress().When(x => !string.IsNullOrEmpty(x.CustomerEmail));
         RuleFor(x => x.ShippingAddress).NotEmpty().MaximumLength(500)
             .When(x => x.DeliveryMethod != DeliveryMethod.PickupAtStore);
+        RuleFor(x => x.DeliveryLatitude).InclusiveBetween(-90, 90)
+            .When(x => x.DeliveryLatitude.HasValue);
+        RuleFor(x => x.DeliveryLongitude).InclusiveBetween(-180, 180)
+            .When(x => x.DeliveryLongitude.HasValue);
         RuleFor(x => x.Items).NotEmpty().WithMessage("Đơn hàng phải có ít nhất 1 sản phẩm.");
         RuleForEach(x => x.Items).ChildRules(i =>
         {
@@ -46,17 +53,33 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderDto>
 {
     private readonly IHarnessDbContext _db;
+    private readonly IWarehouseAllocator _allocator;
 
-    public CreateOrderCommandHandler(IHarnessDbContext db) => _db = db;
+    public CreateOrderCommandHandler(IHarnessDbContext db, IWarehouseAllocator allocator)
+    {
+        _db = db;
+        _allocator = allocator;
+    }
 
     public async Task<OrderDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
+        // M15: nếu khách không chọn kho trước (PickupAtStore), tự động phân bổ kho gần nhất
+        // có đủ tồn theo toạ độ địa chỉ giao hàng (Haversine).
+        int? warehouseId = request.WarehouseId;
+        if (warehouseId is null && request.DeliveryLatitude.HasValue && request.DeliveryLongitude.HasValue)
+        {
+            var required = request.Items.ToDictionary(i => i.VariantSku, i => i.Quantity);
+            var allocation = await _allocator.FindNearestAsync(
+                request.DeliveryLatitude.Value, request.DeliveryLongitude.Value, required, cancellationToken);
+            warehouseId = allocation.WarehouseId;
+        }
+
         var order = OrderEntity.Create(
             request.CustomerName, request.CustomerPhone, request.CustomerEmail,
             request.ShippingAddress, request.Note,
             request.DeliveryMethod, request.PaymentMethod,
             request.Items.Select(i => (i.ProductId, i.VariantSku, i.ProductName, i.UnitPrice, i.Quantity)),
-            request.ShippingFee, request.DiscountAmount, request.WarehouseId);
+            request.ShippingFee, request.DiscountAmount, warehouseId);
 
         _db.Set<OrderEntity>().Add(order);
         // Outbox: ERP tạo bút toán, DMS giữ chỗ tồn kho sau khi đơn được ghi nhận
