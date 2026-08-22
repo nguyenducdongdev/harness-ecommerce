@@ -37,6 +37,8 @@ export interface StoreItem {
   managerName?: string;
   isActive: boolean;
   createdAt: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface AttendanceItem {

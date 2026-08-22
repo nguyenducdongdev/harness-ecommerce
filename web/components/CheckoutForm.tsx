@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatVnd } from "@/lib/format";
 import { useCart } from "@/store/cart";
 import { promotionApi } from "@/lib/api";
@@ -49,6 +49,19 @@ export function CheckoutForm({ totalAmount }: Props) {
   const [voucherMessage, setVoucherMessage] = useState("");
   const [voucherError, setVoucherError] = useState("");
   const [applyingVoucher, setApplyingVoucher] = useState(false);
+  const [deliveryLat, setDeliveryLat] = useState<number | undefined>();
+  const [deliveryLng, setDeliveryLng] = useState<number | undefined>();
+
+  // M15: Lấy toạ độ trình duyệt để hỗ trợ auto-allocate kho gần nhất
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { setDeliveryLat(pos.coords.latitude); setDeliveryLng(pos.coords.longitude); },
+        () => { /* không cho phép hoặc lỗi — bỏ qua, order vẫn tạo được */ },
+        { timeout: 5000, enableHighAccuracy: false },
+      );
+    }
+  }, []);
 
   async function applyVoucher(e: React.MouseEvent) {
     e.preventDefault();
@@ -115,6 +128,8 @@ export function CheckoutForm({ totalAmount }: Props) {
           deliveryMethod: delivery,
           paymentMethod: payment,
           discountAmount,
+          deliveryLatitude: deliveryLat ?? null,
+          deliveryLongitude: deliveryLng ?? null,
           items: items.map((i) => ({
             productId: i.productId,
             variantSku: i.variantSku,

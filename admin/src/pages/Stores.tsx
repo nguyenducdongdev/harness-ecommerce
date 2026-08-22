@@ -36,6 +36,8 @@ export default function Stores() {
           phone: values.phone || "",
           managerName: values.managerName || "",
           isActive: values.isActive ?? true,
+          latitude: values.latitude ?? null,
+          longitude: values.longitude ?? null,
         });
         messageApi.success("Cập nhật cửa hàng thành công!");
       } else {
@@ -45,6 +47,8 @@ export default function Stores() {
           address: values.address,
           phone: values.phone || "",
           managerName: values.managerName || "",
+          latitude: values.latitude ?? null,
+          longitude: values.longitude ?? null,
         });
         messageApi.success("Thêm mới cửa hàng thành công!");
       }
@@ -76,6 +80,8 @@ export default function Stores() {
       phone: store.phone,
       managerName: store.managerName,
       isActive: store.isActive,
+      latitude: store.latitude ?? null,
+      longitude: store.longitude ?? null,
     });
     setIsModalOpen(true);
   };
@@ -83,6 +89,8 @@ export default function Stores() {
   const columns = [
     { title: "Mã Cửa Hàng", dataIndex: "code", key: "code", render: (text: string) => <strong>{text}</strong> },
     { title: "Tên Cửa Hàng", dataIndex: "name", key: "name" },
+    { title: "Vĩ Độ", dataIndex: "latitude", key: "latitude", render: (v?: number) => v?.toFixed(4) ?? "-" },
+    { title: "Kinh Độ", dataIndex: "longitude", key: "longitude", render: (v?: number) => v?.toFixed(4) ?? "-" },
     { title: "Địa Chỉ", dataIndex: "address", key: "address" },
     { title: "Số Điện Thoại", dataIndex: "phone", key: "phone" },
     { title: "Quản Lý", dataIndex: "managerName", key: "managerName", render: (text?: string) => text || "-" },
@@ -162,6 +170,12 @@ export default function Stores() {
               <Switch />
             </Form.Item>
           )}
+          <Form.Item label="Vĩ Độ (Latitude)" name="latitude">
+            <Input type="number" step="0.0001" placeholder="VD: 10.7723" />
+          </Form.Item>
+          <Form.Item label="Kinh Độ (Longitude)" name="longitude">
+            <Input type="number" step="0.0001" placeholder="VD: 106.7043" />
+          </Form.Item>
         </Form>
       </Modal>
     </div>

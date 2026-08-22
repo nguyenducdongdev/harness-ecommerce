@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import {
   ApiOutlined,
   AppstoreOutlined,
+  CustomerServiceOutlined,
   DatabaseOutlined,
   GiftOutlined,
   HomeOutlined,
@@ -25,6 +26,7 @@ import Integration from "./pages/Integration";
 import Stores from "./pages/Stores";
 import Attendance from "./pages/Attendance";
 import Kpi from "./pages/Kpi";
+import SupportChat from "./pages/SupportChat";
 import Login from "./pages/Login";
 
 const { Header, Sider, Content } = Layout;
@@ -98,6 +100,9 @@ export default function App() {
           { key: "integration", icon: <ApiOutlined />, label: "Tích hợp" },
         ]
       : []),
+    ...(hasRole(profile, "Admin", "SuperAdmin", "Support")
+      ? [{ key: "support", icon: <CustomerServiceOutlined />, label: "Hỗ trợ Chat" }]
+      : []),
   ];
 
   return (
@@ -145,6 +150,7 @@ export default function App() {
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/kpi" element={<Kpi />} />
             <Route path="/integration" element={<Integration />} />
+            <Route path="/support" element={<SupportChat />} />
           </Routes>
         </Content>
       </Layout>
