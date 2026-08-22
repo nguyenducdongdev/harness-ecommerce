@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "harness-ecommerce.fullname" . }}-admin
+  labels:
+    app: {{ include "harness-ecommerce.fullname" . }}-admin
+spec:
+  replicas: {{ .Values.admin.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "harness-ecommerce.fullname" . }}-admin
+  template:
+    metadata:
+      labels:
+        app: {{ include "harness-ecommerce.fullname" . }}-admin
+    spec:
+      containers:
+        - name: admin
+          image: "{{ .Values.imageRegistry }}/admin:{{ .Values.admin.tag }}"
+          imagePullPolicy: {{ .Values.admin.pullPolicy }}
+          ports:
+            - containerPort: 80
+          resources:
+            {{- toYaml .Values.admin.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "harness-ecommerce.fullname" . }}-admin-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: {{ include "harness-ecommerce.fullname" . }}-admin

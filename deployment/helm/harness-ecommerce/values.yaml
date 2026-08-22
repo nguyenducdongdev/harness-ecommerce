@@ -1,0 +1,77 @@
+global:
+  environment: Production
+
+imageRegistry: registry.example.vn/harness
+
+api:
+  repository: harness/api
+  tag: latest
+  pullPolicy: IfNotPresent
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 75
+
+web:
+  repository: harness/web
+  tag: latest
+  pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 80
+
+admin:
+  repository: harness/admin
+  tag: latest
+  pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  domain: harness.example.com
+  tls: true
+  clusterIssuer: letsencrypt-prod
+
+database:
+  host: postgres-service
+  port: 5432
+  name: harness
+  user: harness
+  password: harness_production_secret_password
+
+redis:
+  host: redis-service
+  port: 6379
+
+rabbitmq:
+  host: rabbitmq-service
+  port: 5672
+  user: harness
+  password: harness_production_secret_password

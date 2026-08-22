@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "harness-ecommerce.fullname" . }}-config
+data:
+  ASPNETCORE_ENVIRONMENT: {{ .Values.global.environment | quote }}
+  ConnectionStrings__Redis: "{{ .Values.redis.host }}:{{ .Values.redis.port }}"
+  RabbitMQ__Host: {{ .Values.rabbitmq.host | quote }}
+  RabbitMQ__Port: {{ .Values.rabbitmq.port | quote }}
+  NEXT_PUBLIC_API_URL: "https://api.{{ .Values.ingress.domain }}"

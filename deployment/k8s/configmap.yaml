@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: harness-config
+  namespace: harness-ecommerce
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ConnectionStrings__Redis: "redis-service:6379"
+  RabbitMQ__Host: "rabbitmq-service"
+  RabbitMQ__Port: "5672"
+  NEXT_PUBLIC_API_URL: "https://api.harness.example.com"

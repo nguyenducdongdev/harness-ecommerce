@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "harness-ecommerce.fullname" . }}-web
+  labels:
+    app: {{ include "harness-ecommerce.fullname" . }}-web
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "harness-ecommerce.fullname" . }}-web
+  template:
+    metadata:
+      labels:
+        app: {{ include "harness-ecommerce.fullname" . }}-web
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.imageRegistry }}/web:{{ .Values.web.tag }}"
+          imagePullPolicy: {{ .Values.web.pullPolicy }}
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: {{ include "harness-ecommerce.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "harness-ecommerce.fullname" . }}-web-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: {{ include "harness-ecommerce.fullname" . }}-web
